@@ -1,0 +1,11 @@
+How to create a fillable .pdf: 
+
+- If you have an Adobe Reader subscription: Here is a video that explains it nicely: https://www.youtube.com/watch?v=tKY7zTHS9wk (Example for form created with Microsoft Word, but should be similar for Excel)
+
+- If you don't have an Adobe Reader subscription, use a free website like https://www.pdfescape.com/, where you can upload a .pdf and add the fields manually (it needs registration). 
+Notes:
+- The form can be written in any software (word, excel, etc.) because the website requires a .pdf
+- There is also an installable version for Windows
+
+- If you want to use a different software, it's recommended to first test the compatibility with the code in this folder. Create one field, fill it out, run the code, and make sure you can print out the string contained in that field.
+(Already tried: If form is created with https://www.sejda.com/, the filled out fields are not read in Python - empty strings)

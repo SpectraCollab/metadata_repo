@@ -1,0 +1,5 @@
+file_name,time_BL,time_FU_3mo,time_FU_6mo,birth_date,sex,side_per_clinician,height_cm,weight_kg,pat_name,fractures_surgeries,metal_in_VOI,recent_imaging,pregnant,scanner_id_1,scanner_id_2,scanner_id_3,pat_no_1,pat_no_2,pat_no_3,meas_no,ctr_file_1,ctr_file_2,ctr_file_3,ref_line_1,ref_line_2,ref_line_3,saved_scout_1,saved_scout_2,saved_scout_3,side_1,side_2,side_3,comments_1,comments_2,comments_3,tech_1,tech_2,tech_3,study_ID,LMP
+transmittal_3300_subject_1.pdf,x,,,20 Oct 1960,F,R,160,60,MCP_MAIN7    ,NO,NO,Ultrasound,no,3300,,,440,,,1909,77,,,200,,,YES,,,R,,,,,,LG,,,3300_SPECTRA,
+transmittal_3300_subject_2.pdf,x,,,10 Mar 1967,F,L,170,65,MCP_MAIN2    ,hand surgery,NO,NO,NO,3300,,,426,,,1841,78,,,210,,,YES,,,L,,,Subject couldn’t stay still,,,LG,,,3300_SPECTRA,
+transmittal_3300_subject_3.pdf,,,x,24 Apr 1958,M,L,180,90,MCP_MAIN4   ,NO,NO,NO,NO,,,3300,,,431,1863,,,78,,,205,,,NO,,,L,,,,,,LG,3300_SPECTRA,
+transmittal_3300_subject_4.pdf,,x,,03 Mar 1965,F,L,170,60,MCP_MAIN6           ,tendon,NO,X-rays,NO,,3300,,,437,,1896,,78,,,208,,,NO,,,L,,,,,,LG,,3300_SPECTRA,
