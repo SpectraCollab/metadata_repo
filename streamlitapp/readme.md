@@ -2,11 +2,11 @@
 ### Step 1: Install the "spectra_repo" Anaconda Environment:
 Ensure your terminal is in the /streamlitapp directory, then run:
 
-`conda env create -f environment.yml`
+`conda env create -f environment.yaml`
 
 If using an Apple M1, M2, or M3 processor, run the following command instead:
 
-`CONDA_SUBDIR=osx-64 conda env create -f environment.yml`
+`CONDA_SUBDIR=osx-64 conda env create -f environment.yaml`
 
 ### Step 2: Activate the Anaconda Environment:
 `conda activate spectra_repo`
