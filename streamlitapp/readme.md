@@ -29,4 +29,4 @@ Run the command:
 
 `streamlit run myApp.py`
 
-The webpage should automatically open on your default browser.
+The webpage should automatically open on your default browser. **(Note, if it is your first time using Streamlit, you may be prompted to enter your email. You don't have to. Instead just leave the email field blank and press enter)**
