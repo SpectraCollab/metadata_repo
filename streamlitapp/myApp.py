@@ -2,6 +2,9 @@ import streamlit as st
 import pymongo
 import pandas as pd
 from datetime import date
+import utils
+import utils.sanco_read_files_adapted
+import PyPDF2
 
 # Initialize connection once and use accross all users and sessions
 @st.cache_resource
@@ -34,15 +37,17 @@ def calculate_age(birthdate):
 
 # Page Setup
 st.set_page_config(layout="wide")
-st.image("spectra.webp", width=250)
-st.header("""Data""")
 items = get_data()
 data = to_df(items.find({}))
 studies = data["study_ID"].unique()
-col1, col2 = st.columns([0.75, 0.25])
+
+# All Data Section
+st.image("spectra.webp", width=250)
+st.header("""All Data""")
+col1, col2 = st.columns([0.25, 0.75])
 
 # Filter Selection Form in the right column
-with col2.form("filters", clear_on_submit=False):
+with col1.form("filters", clear_on_submit=False):
         
     # Query Params selection
     sex_select = st.radio("Sex", ["All", "M", "F"])
@@ -87,16 +92,75 @@ with col2.form("filters", clear_on_submit=False):
         data = to_df(items.find({}))
 
 # Displaying the DataFrame in the left column
-col1.write(data)
+col2.write(data)
 
-# File Upload Section
-st.header("""Upload Your Data""")
-uploaded_file = st.file_uploader("Accepted File Types: .csv, .xlsx")
+col3, col4 = st.columns([0.5, 0.5])
 
-# Placeholder for csv... much more work will be done here
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-    st.write(df)
+# Image Upload Section
+col3.header("""Upload Images""")
+uploaded_images = col3.file_uploader("Accepted File Types: .isq", type=['isq', 'isq;1'], accept_multiple_files=True)
 
+if uploaded_images != []:
+    all_keys = []
+    all_values = []
+
+    for index, uploaded_image in enumerate(uploaded_images):
+
+        current_keys, current_values = utils.sanco_read_files_adapted.read_isq_header(uploaded_image)
+
+        if index == 0:
+            all_keys = current_keys
+
+        all_values.append(current_values)
+
+    # create dataframe (=table)
+    isq_headers = pd.DataFrame(all_values, columns = all_keys)
+
+    # adding column with file names in position 0
+    isq_headers.insert(0, "file_name", [uploaded_image.name for uploaded_image in uploaded_images])
+
+    # delete column "fill" because it just contains zeros
+    isq_headers = isq_headers.drop(columns = ["fill"])
+
+    col3.write(isq_headers)
+
+# Study Upload Section
+col4.header("""Upload Subjects""")
+uploaded_subjects = col4.file_uploader("Accepted File Types: .pdf", type=['pdf'], accept_multiple_files=True)
+
+if uploaded_subjects != []:
+    all_keys = []
+    all_values = []
+
+    for index, file in enumerate(uploaded_subjects):
+
+        f = PyPDF2.PdfReader(file)
+        ff = f.get_fields()
+
+        # get keys for the current subject
+        current_keys = list(ff.keys())
+
+        # get the values for the current subject
+        current_values = []
+        for k,v in ff.items():
+            if "/V" in v.keys():
+                current_values.append(v["/V"])
+            else:
+                current_values.append("")
+        
+        # save the keys of the first subject in the variable all_keys
+        if index == 0:
+            all_keys = current_keys
+
+        # add the values of the current subject to all_values
+        all_values.append(current_values)
+    
+    # create dataframe (=table)
+    subjects_info = pd.DataFrame(all_values, columns = all_keys)
+
+    # adding column with file names in position 0
+    subjects_info.insert(0, "file_name", [file.name for file in uploaded_subjects])
+
+    col4.write(subjects_info)
 
 
