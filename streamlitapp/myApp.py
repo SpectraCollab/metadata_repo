@@ -7,6 +7,46 @@ from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(layout="wide")
 
+## SESSION STATES ##
+if 'add_to_db_button' not in st.session_state:
+    st.session_state.add_to_db_button = False
+if 'keep' not in st.session_state:
+    st.session_state.keep = False
+if 'overwrite' not in st.session_state:
+    st.session_state.overwrite = False
+if 'cancel' not in st.session_state:
+    st.session_state.cancel = False
+if 'prev_action' not in st.session_state:
+    st.session_state.prev_action = False
+if 'message' not in st.session_state:
+    st.session_state.message = ""
+
+## SESSION STATE FUNCTIONS ##
+def add_to_db_button_clicked():
+    st.session_state.add_to_db_button = True
+
+def keep_clicked():
+    st.session_state.keep = True
+    st.session_state.prev_action = True
+
+def overwrite_clicked():
+    st.session_state.overwrite = True
+    st.session_state.prev_action = True
+
+def cancel_clicked():
+    st.session_state.cancel = True
+    st.session_state.prev_action = True
+
+def reset_button_session_states():
+    st.session_state.keep = False
+    st.session_state.overwrite = False
+    st.session_state.cancel = False
+    st.session_state.add_to_db_button = False
+
+def reset_prev_action():
+    st.session_state.prev_action = False
+
+## FUNCTIONS ##
 @st.cache_resource
 def init_connection():
     """
@@ -39,44 +79,6 @@ def get_collection(collection_name):
     db = client.spectra
     collection = db[collection_name]
     return collection
-
-# using session states to handle button clicks 
-if 'add_to_db_button' not in st.session_state:
-    st.session_state.add_to_db_button = False
-if 'keep' not in st.session_state:
-    st.session_state.keep = False
-if 'overwrite' not in st.session_state:
-    st.session_state.overwrite = False
-if 'cancel' not in st.session_state:
-    st.session_state.cancel = False
-if 'prev_action' not in st.session_state:
-    st.session_state.prev_action = False
-if 'message' not in st.session_state:
-    st.session_state.message = ""
-
-def add_to_db_button_clicked():
-    st.session_state.add_to_db_button = True
-
-def keep_clicked():
-    st.session_state.keep = True
-    st.session_state.prev_action = True
-
-def overwrite_clicked():
-    st.session_state.overwrite = True
-    st.session_state.prev_action = True
-
-def cancel_clicked():
-    st.session_state.cancel = True
-    st.session_state.prev_action = True
-
-def reset_button_session_states():
-    st.session_state.keep = False
-    st.session_state.overwrite = False
-    st.session_state.cancel = False
-    st.session_state.add_to_db_button = False
-
-def reset_prev_action():
-    st.session_state.prev_action = False
 
 def insert_df_into_collection(df, collection_name):
     """
@@ -137,7 +139,8 @@ def insert_df_into_collection(df, collection_name):
             st.session_state.message = f"No Duplicates Found: Inserted {len(insert.inserted_ids)} items to database!"
         except:
             st.write("Something went wrong...")
-    
+
+## PAGES ##
 def home():
     """
     Home page to display current database
@@ -159,7 +162,7 @@ def home():
         return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
 
     reset_prev_action()
-    
+
     # Page Setup
     allData = get_collection("allData")
     protocols = get_collection("protocols")
