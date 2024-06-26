@@ -3,6 +3,7 @@ import pymongo
 import pandas as pd
 from datetime import date
 import utils.file_reader
+from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(layout="wide")
 
@@ -39,12 +40,51 @@ def get_collection(collection_name):
     collection = db[collection_name]
     return collection
 
-def insert_df_into_db(df):
+# using session states to handle button clicks 
+if 'add_to_db_button' not in st.session_state:
+    st.session_state.add_to_db_button = False
+if 'keep' not in st.session_state:
+    st.session_state.keep = False
+if 'overwrite' not in st.session_state:
+    st.session_state.overwrite = False
+if 'cancel' not in st.session_state:
+    st.session_state.cancel = False
+if 'prev_action' not in st.session_state:
+    st.session_state.prev_action = False
+if 'message' not in st.session_state:
+    st.session_state.message = ""
+
+def add_to_db_button_clicked():
+    st.session_state.add_to_db_button = True
+
+def keep_clicked():
+    st.session_state.keep = True
+    st.session_state.prev_action = True
+
+def overwrite_clicked():
+    st.session_state.overwrite = True
+    st.session_state.prev_action = True
+
+def cancel_clicked():
+    st.session_state.cancel = True
+    st.session_state.prev_action = True
+
+def reset_button_session_states():
+    st.session_state.keep = False
+    st.session_state.overwrite = False
+    st.session_state.cancel = False
+    st.session_state.add_to_db_button = False
+
+def reset_prev_action():
+    st.session_state.prev_action = False
+
+def insert_df_into_collection(df, collection_name):
     """
     Inserts rows of a DataFrame as documents into a collection
 
     Parameters:
     df (DataFrame): Data to be inserted into collection 
+    collection_name (str): Name of the collection to insert data into
 
     Returns:
     None
@@ -52,19 +92,57 @@ def insert_df_into_db(df):
     """
     client = init_connection()
     db = client.spectra
-    collection = db.allData
-    try:
-        insert = collection.insert_many(df.to_dict('records'))
-        st.write(f"Inserted {len(insert.inserted_ids)} items to database!")
-    except:
-        st.write("Something went wrong...")
+    collection = db[collection_name]
 
-def all_data():
+    duplicates = pd.DataFrame(collection.find({"file_name_x": {"$in":df["file_name_x"].tolist()}}))
+
+    if not duplicates.empty:
+        st.warning(f"There are {duplicates.shape[0]} entries that already exist in the collection.")
+        duplicates.drop(columns="_id", inplace=True)
+        st.write("Existing Data")
+        st.write(duplicates)
+
+        searchfor = duplicates["file_name_x"].tolist()
+        df_duplicates = df[df["file_name_x"].str.contains('|'.join(searchfor))]
+        st.write("New Data")
+        st.write(df_duplicates)
+
+        col1, col2, col3 = st.columns(3)
+        col1.button("Keep Existing File in Database", on_click=keep_clicked)
+        col2.button("Overwrite Existing File", on_click=overwrite_clicked)
+        col3.button("Cancel Upload", on_click=cancel_clicked)
+
+        if st.session_state.keep:
+            st.session_state.message = f"Keeping Duplicates: Inserted ... items to database."
+            reset_button_session_states()
+            st.rerun()
+
+        if st.session_state.overwrite:
+            collection.delete_many({"file_name_x": {"$in":df["file_name_x"].tolist()}})
+            try:
+                insert = collection.insert_many(df.to_dict('records'))
+                st.session_state.message = f"Overwrote Duplicates: Inserted {len(insert.inserted_ids)} items to database."
+            except:
+                st.write("Something went wrong...")
+            reset_button_session_states()
+            st.rerun()
+
+        if st.session_state.cancel:
+            st.session_state.message = f"Cancelled Data Upload"
+            reset_button_session_states()
+            st.rerun()
+    else:
+        try:
+            insert = collection.insert_many(df.to_dict('records'))
+            st.session_state.message = f"No Duplicates Found: Inserted {len(insert.inserted_ids)} items to database!"
+        except:
+            st.write("Something went wrong...")
+    
+def home():
     """
     Home page to display current database
 
     """
-
     # Convert MongoDB query results to DataFrame
     def to_df(query_results):
         df = pd.DataFrame(query_results)
@@ -80,12 +158,13 @@ def all_data():
         today = date.today()
         return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
 
+    reset_prev_action()
+    
     # Page Setup
     allData = get_collection("allData")
     protocols = get_collection("protocols")
     protocols_df = pd.DataFrame(protocols.find({}))
     data = to_df(allData.find({}))
-    studies = data["study_ID"].unique()
 
     # All Data Section
     titleCol1, titleCol2 = st.columns([0.6, 0.4])
@@ -95,55 +174,60 @@ This demonstration will show basic functionality of uploading image metadata to 
     titleCol1.markdown(md)
     titleCol2.image("spectra.webp", width=250)
     st.header("All Data")
-    col1, col2 = st.columns([0.25, 0.75])
 
-    # Filter Selection Form in the right column
-    with col1.form("filters", clear_on_submit=False):
-            
-        # Query Params selection
-        sex_select = st.radio("Sex", ["All", "M", "F"])
-        age_select = st.slider("Minimum Age", 0, 100)
-        study_select = st.multiselect("Study ID", studies)
+    # if there are no documents in the collection, data will be a string type
+    if type(data) == str:
+        st.write("No data to display.")
+    else:
+        col1, col2 = st.columns([0.25, 0.75])
+        # Filter Selection Form in the right column
+        with col1.form("filters", clear_on_submit=False):
+            studies = data["study_ID"].unique()
 
-        "---"
+            # Query Params selection
+            sex_select = st.radio("Sex", ["All", "M", "F"])
+            age_select = st.slider("Minimum Age", 0, 100)
+            study_select = st.multiselect("Study ID", studies)
 
-        # Submit/reset buttons
-        formCol1, formCol2 = st.columns([0.6,0.4])
-        submitted = formCol1.form_submit_button("Submit Query")
-        reset = formCol2.form_submit_button("Reset")  
+            "---"
 
-        # Run query if submit button is clicked
-        if submitted:
+            # Submit/reset buttons
+            formCol1, formCol2 = st.columns([0.6,0.4])
+            submitted = formCol1.form_submit_button("Submit Query")
+            reset = formCol2.form_submit_button("Reset")  
 
-            # Refresh data
-            allData = get_collection("allData")
+            # Run query if submit button is clicked
+            if submitted:
 
-            # Initialize Query
-            query = {}   
+                # Refresh data
+                allData = get_collection("allData")
 
-            # Building Query
-            if sex_select != "All":
-                query["sex"] = sex_select 
-            if age_select > 0:
-                data['age'] = data["birth_date"].apply(calculate_age)
-                ids = data["_id"][(data["age"] >= age_select)].to_list()
-                data.drop('age', axis='columns')
-                sub_query = {'$in': ids}
-                query["_id"] = sub_query
-            if study_select != []:
-                sub_query = {'$in': study_select}
-                query["study_ID"] = sub_query
+                # Initialize Query
+                query = {}   
 
-            # Execute Query       
-            data = to_df(allData.find(query))
+                # Building Query
+                if sex_select != "All":
+                    query["sex"] = sex_select 
+                if age_select > 0:
+                    data['age'] = data["birth_date"].apply(calculate_age)
+                    ids = data["_id"][(data["age"] >= age_select)].to_list()
+                    data.drop('age', axis='columns')
+                    sub_query = {'$in': ids}
+                    query["_id"] = sub_query
+                if study_select != []:
+                    sub_query = {'$in': study_select}
+                    query["study_ID"] = sub_query
 
-        # Return all data if reset is clicked... still need to reset buttons
-        elif reset:
-            allData = get_collection("allData")
-            data = to_df(allData.find({}))
+                # Execute Query       
+                data = to_df(allData.find(query))
 
-    # Displaying the DataFrame in the left column
-    col2.write(data)
+            # Return all data if reset is clicked... still need to reset buttons
+            elif reset:
+                allData = get_collection("allData")
+                data = to_df(allData.find({}))
+
+        # Displaying the DataFrame in the left column
+        col2.write(data)
 
     # Protocols Section
     st.header("Protocols")
@@ -182,6 +266,9 @@ def csv_import():
     Page to demonstrate uploading metadata from pre-compiled csv
 
     """
+    # Used to display the previous action that occured after the page was rerun
+    if st.session_state.prev_action != False:
+        st.warning(st.session_state.message)
 
     md = """#### Upload CSV
     
@@ -200,25 +287,47 @@ This may allow users to upload metadata for multiple subjects at once."""
             data = pd.read_excel(uploaded_file)
 
         # DO SOME ERROR CHECKING FOR REQUIRED FIELDS
-
+        data.drop(columns='Unnamed: 0', inplace=True)
         st.write(data)
-
+        st.button("Add to Database", on_click=add_to_db_button_clicked)
+        if st.session_state.add_to_db_button:
+            insert_df_into_collection(data, "allData")
+        
 def image_upload():
     """
     Page to demonstrate extracting image headers and pdf data automatically
 
     """
+    if 'add_to_db_button' not in st.session_state:
+        st.session_state.add_to_db_button = False
+    if 'keep' not in st.session_state:
+        st.session_state.keep = False
+    if 'overwrite' not in st.session_state:
+        st.session_state.overwrite = False
+    if 'cancel' not in st.session_state:
+        st.session_state.cancel = False
+    if 'prev_action' not in st.session_state:
+        st.session_state.prev_action = False
+    if 'message' not in st.session_state:
+        st.session_state.message = ""
+
+    def add_to_db_button_clicked():
+        st.session_state.add_to_db_button = True
+    
+    if st.session_state.prev_action != False:
+        st.warning(st.session_state.message)
+
     md = """#### Upload Image and PDF
     
 Users have the option to upload batches of images and PDFs which can automatically be parsed for relevant metadata. 
 This option comes with increased complexity regarding security and server performance."""
     st.markdown(md)
-    col1, col2 = st.columns([0.5, 0.5])
 
     isq_loaded = False
     subjects_loaded = False
     protocols_loaded = False
 
+    col1, col2 = st.columns([0.5, 0.5])
     # Image Upload Section
     col1.header("""Upload Images""")
     uploaded_images = col1.file_uploader("Accepted File Types: ISQ", type=['isq', 'isq;1'], accept_multiple_files=True)
@@ -253,13 +362,14 @@ This option comes with increased complexity regarding security and server perfor
         # Writing new rows to database    
         else:
             st.write(merged_df)
-            add_to_db_button = st.button("Add to Database")
-            if add_to_db_button:
-                insert_df_into_db(merged_df)
+            st.button("Add to Database", on_click=add_to_db_button_clicked)
+
+            if st.session_state.add_to_db_button:
+                insert_df_into_collection(merged_df, "allData")
 
 # Page and Sidebar Setup
 page_names_to_funcs = {
-    "Home": all_data,
+    "Home": home,
     "Fillable Form": fillable_form,
     "Upload CSV": csv_import,
     "Upload Images": image_upload

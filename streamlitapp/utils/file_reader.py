@@ -6,6 +6,8 @@ import PyPDF2
 
 def read_isq_header(isq_file):
     """
+    !!!! ADAPTED FROM PyMSK by SERENA BONARETTI !!!!
+
     This function reads an .isq file header and returns its content as two lists of strings: "keys" and "values"
     The list "keys" contains the data labels (e.g. pixel_size_um).
     The list "value" contains the actual values (e.g. 82)
