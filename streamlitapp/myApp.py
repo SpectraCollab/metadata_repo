@@ -2,37 +2,68 @@ import streamlit as st
 import pymongo
 import pandas as pd
 from datetime import date
-import utils
-import utils.sanco_read_files_adapted
-import PyPDF2
+import utils.file_reader
 
 st.set_page_config(layout="wide")
+
+@st.cache_resource
+def init_connection():
+    """
+    Initializes connection to MongoDB cluster
+
+    Parameters:
+    None
+
+    Returns:
+    client (MongoClient): Client for a MongoDB instance
+
+    """
+    connection_string = st.secrets['connection_string']
+    client = pymongo.MongoClient(connection_string, tls=True)
+    return client
+
+@st.cache_resource(ttl=600)
+def get_collection(collection_name):
+    """
+    Retrieves a collection from the spectra database
+
+    Parameters:
+    collection_name (str): name of collection 
+
+    Returns:
+    collection: (Collection): specified collection
+
+    """
+    client = init_connection()
+    db = client.spectra
+    collection = db[collection_name]
+    return collection
+
+def insert_df_into_db(df):
+    """
+    Inserts rows of a DataFrame as documents into a collection
+
+    Parameters:
+    df (DataFrame): Data to be inserted into collection 
+
+    Returns:
+    None
+
+    """
+    client = init_connection()
+    db = client.spectra
+    collection = db.allData
+    try:
+        insert = collection.insert_many(df.to_dict('records'))
+        st.write(f"Inserted {len(insert.inserted_ids)} items to database!")
+    except:
+        st.write("Something went wrong...")
 
 def all_data():
     """
     Home page to display current database
 
     """
-    # Initialize connection once and use accross all users and sessions
-    @st.cache_resource
-    def init_connection():
-        connection_string = st.secrets['connection_string']
-        return pymongo.MongoClient(connection_string, tls=True)
-
-    # Rerun if method is called or every 10 mins
-    @st.cache_resource(ttl=600)
-    def get_data():
-        client = init_connection()
-        db = client.spectra
-        items = db.allData
-        return items
-
-    @st.cache_resource(ttl=600)
-    def get_protocols():
-        client = init_connection()
-        db = client.spectra
-        items = db.protocols
-        return items
 
     # Convert MongoDB query results to DataFrame
     def to_df(query_results):
@@ -50,15 +81,20 @@ def all_data():
         return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
 
     # Page Setup
-    items = get_data()
-    protocols = get_protocols()
+    allData = get_collection("allData")
+    protocols = get_collection("protocols")
     protocols_df = pd.DataFrame(protocols.find({}))
-    data = to_df(items.find({}))
+    data = to_df(allData.find({}))
     studies = data["study_ID"].unique()
 
     # All Data Section
-    st.image("spectra.webp", width=250)
-    st.header("""All Data""")
+    titleCol1, titleCol2 = st.columns([0.6, 0.4])
+    md = """#### Welcome to the SPECTRA Metadata Repository
+
+This demonstration will show basic functionality of uploading image metadata to the database."""
+    titleCol1.markdown(md)
+    titleCol2.image("spectra.webp", width=250)
+    st.header("All Data")
     col1, col2 = st.columns([0.25, 0.75])
 
     # Filter Selection Form in the right column
@@ -80,7 +116,7 @@ def all_data():
         if submitted:
 
             # Refresh data
-            items = get_data()
+            allData = get_collection("allData")
 
             # Initialize Query
             query = {}   
@@ -99,12 +135,12 @@ def all_data():
                 query["study_ID"] = sub_query
 
             # Execute Query       
-            data = to_df(items.find(query))
+            data = to_df(allData.find(query))
 
         # Return all data if reset is clicked... still need to reset buttons
         elif reset:
-            items = get_data()
-            data = to_df(items.find({}))
+            allData = get_collection("allData")
+            data = to_df(allData.find({}))
 
     # Displaying the DataFrame in the left column
     col2.write(data)
@@ -113,11 +149,21 @@ def all_data():
     st.header("Protocols")
     st.write(protocols_df)
 
+    md = """Feel free to check out the GitHub repository:
+
+    https://github.com/SpectraCollab/metadata_repo.git"""
+    st.markdown(md)
+
 def fillable_form():
     """
     Page to demonstrate uploading metadata manually through an online form
 
     """
+    md = """#### Fillable Form
+    
+Users may have the option to manually add metadata at the subject level. This method maximizes simplicity while sacrificing ability to easily upload multiple subjects."""
+    st.markdown(md)
+
     st.header("Add Image Metadata")
     with st.form("filters", clear_on_submit=False):
 
@@ -136,6 +182,12 @@ def csv_import():
     Page to demonstrate uploading metadata from pre-compiled csv
 
     """
+
+    md = """#### Upload CSV
+    
+Users may have the option to upload a pre-formatted CSV with the same fields as the Fillable Form. 
+This may allow users to upload metadata for multiple subjects at once."""
+    st.markdown(md)
 
     st.header("Upload Metadata CSV")
     uploaded_file = st.file_uploader("Accepted File Types: CSV, XLSX", type=['csv', 'xlsx'], accept_multiple_files=False)
@@ -156,74 +208,54 @@ def image_upload():
     Page to demonstrate extracting image headers and pdf data automatically
 
     """
+    md = """#### Upload Image and PDF
+    
+Users have the option to upload batches of images and PDFs which can automatically be parsed for relevant metadata. 
+This option comes with increased complexity regarding security and server performance."""
+    st.markdown(md)
     col1, col2 = st.columns([0.5, 0.5])
+
+    isq_loaded = False
+    subjects_loaded = False
+    protocols_loaded = False
 
     # Image Upload Section
     col1.header("""Upload Images""")
     uploaded_images = col1.file_uploader("Accepted File Types: ISQ", type=['isq', 'isq;1'], accept_multiple_files=True)
-
     if uploaded_images != []:
-        all_keys = []
-        all_values = []
-
-        for index, uploaded_image in enumerate(uploaded_images):
-
-            current_keys, current_values = utils.sanco_read_files_adapted.read_isq_header(uploaded_image)
-
-            if index == 0:
-                all_keys = current_keys
-
-            all_values.append(current_values)
-
-        # create dataframe (=table)
-        isq_headers = pd.DataFrame(all_values, columns = all_keys)
-
-        # adding column with file names in position 0
-        isq_headers.insert(0, "file_name", [uploaded_image.name for uploaded_image in uploaded_images])
-
-        # delete column "fill" because it just contains zeros
-        isq_headers = isq_headers.drop(columns = ["fill"])
-
-        col1.write(isq_headers)
+        isq_df = utils.file_reader.isq_to_df(uploaded_images)
+        col1.write(isq_df)
+        isq_loaded = True
 
     # Study Upload Section
     col2.header("""Upload Subjects""")
     uploaded_subjects = col2.file_uploader("Accepted File Types: PDF", type=['pdf'], accept_multiple_files=True)
-
     if uploaded_subjects != []:
-        all_keys = []
-        all_values = []
+        subjects_df = utils.file_reader.pdf_to_df(uploaded_subjects)
+        col2.write(subjects_df)
+        subjects_loaded = True
 
-        for index, file in enumerate(uploaded_subjects):
+    # Fetching Protocols
+    protocols = get_collection("protocols")
+    protocols_df = pd.DataFrame(protocols.find({}))
+    protocols_df.drop(columns="_id", inplace=True)
+    if not protocols_df.empty:
+        protocols_loaded = True
 
-            f = PyPDF2.PdfReader(file)
-            ff = f.get_fields()
+    # Merging Uploaded Data
+    if isq_loaded and subjects_loaded and protocols_loaded:
+        subjects_and_protocols = pd.merge(subjects_df, protocols_df, on=['study_ID'])
+        merged_df = pd.merge(subjects_and_protocols, isq_df, on=['meas_no'])
+        st.header("Merged Dataset")
+        if merged_df.empty:
+            st.write("Unable to merge datasets...")
 
-            # get keys for the current subject
-            current_keys = list(ff.keys())
-
-            # get the values for the current subject
-            current_values = []
-            for k,v in ff.items():
-                if "/V" in v.keys():
-                    current_values.append(v["/V"])
-                else:
-                    current_values.append("")
-            
-            # save the keys of the first subject in the variable all_keys
-            if index == 0:
-                all_keys = current_keys
-
-            # add the values of the current subject to all_values
-            all_values.append(current_values)
-        
-        # create dataframe (=table)
-        subjects_info = pd.DataFrame(all_values, columns = all_keys)
-
-        # adding column with file names in position 0
-        subjects_info.insert(0, "file_name", [file.name for file in uploaded_subjects])
-
-        col2.write(subjects_info)
+        # Writing new rows to database    
+        else:
+            st.write(merged_df)
+            add_to_db_button = st.button("Add to Database")
+            if add_to_db_button:
+                insert_df_into_db(merged_df)
 
 # Page and Sidebar Setup
 page_names_to_funcs = {
