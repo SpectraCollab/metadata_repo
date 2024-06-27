@@ -124,8 +124,9 @@ def insert_df_into_collection(df, collection_name):
             try:
                 insert = collection.insert_many(df.to_dict('records'))
                 st.session_state.message = f"Overwrote Duplicates: Inserted {len(insert.inserted_ids)} items to database."
-            except:
+            except Exception as e:
                 st.write("Something went wrong...")
+                st.write(e)
             reset_button_session_states()
             st.rerun()
 
@@ -137,8 +138,12 @@ def insert_df_into_collection(df, collection_name):
         try:
             insert = collection.insert_many(df.to_dict('records'))
             st.session_state.message = f"No Duplicates Found: Inserted {len(insert.inserted_ids)} items to database!"
-        except:
+            st.session_state.prev_action = True
+            reset_button_session_states()
+            st.rerun()
+        except Exception as e:
             st.write("Something went wrong...")
+            st.write(e)
 
 ## PAGES ##
 def home():
@@ -246,6 +251,10 @@ def fillable_form():
     Page to demonstrate uploading metadata manually through an online form
 
     """
+    # Used to display the previous action that occured after the page was rerun
+    if st.session_state.prev_action:
+        st.warning(st.session_state.message)
+
     md = """#### Fillable Form
     
 Users may have the option to manually add metadata at the subject level. This method maximizes simplicity while sacrificing ability to easily upload multiple subjects."""
@@ -254,15 +263,124 @@ Users may have the option to manually add metadata at the subject level. This me
     st.header("Add Image Metadata")
     with st.form("filters", clear_on_submit=False):
 
-        field1 = st.text_input("Field 1")
+        file_name = st.text_input("File Name*")
+        date_recorded = st.date_input("Date Recorded*")
+        study_id = st.selectbox("Study ID*", ["3300_SPECTRA", "3309_HAND"])
+        scanner_id = st.selectbox("Scanner ID*", ["3300", "3309"])
+        min_intensity = st.number_input("Min Intensity", value=-1000)
+        max_intensity = st.number_input("Max Intensity", value=10000)
 
         "---"
 
         # Submit/reset buttons
-        submitted = st.form_submit_button("Submit Form")
+        submitted = st.form_submit_button("Submit Form", on_click=add_to_db_button_clicked)
 
         if submitted:
-            st.write(field1)
+            if not file_name:
+                st.warning("Please Fill In Required Fields")
+            else:
+                entered_fields = {
+                    "file_name_x": file_name,
+                    "date": str(date_recorded),
+                    "study_ID": study_id,
+                    "scanner_id": scanner_id,
+                    "min_intensity": min_intensity,
+                    "max_intensity": max_intensity
+                }
+                all_keys = [
+                    "file_name_x",
+                    "time_BL",
+                    "time_FU_3mo",
+                    "time_FU_6mo",	
+                    "birth_date",	
+                    "sex",	
+                    "side_per_clinician",	
+                    "height_cm",	
+                    "weight_kg",
+                    "pat_name_x",	
+                    "fractures_surgeries",	
+                    "metal_in_VOI",	
+                    "recent_imaging",	
+                    "pregnant",	
+                    "scanner_id_1",
+                    "scanner_id_2",
+                    "scanner_id_3",	
+                    "pat_no_1",	
+                    "pat_no_2",	
+                    "pat_no_3",	
+                    "meas_no",
+                    "ctr_file_1",
+                    "ctr_file_2",	
+                    "ctr_file_3",	
+                    "ref_line_1",	
+                    "ref_line_2",	
+                    "ref_line_3",	
+                    "saved_scout_1",	
+                    "saved_scout_2",	
+                    "saved_scout_3",	
+                    "side_1",	
+                    "side_2",	
+                    "side_3",	
+                    "comments_1",	
+                    "comments_2",	
+                    "comments_3",	
+                    "tech_1",	
+                    "tech_2",	
+                    "tech_3",	
+                    "study_ID",	
+                    "LMP",	
+                    "Site",	
+                    "PI",	
+                    "Time points",
+                    "Inclusion requirements",
+                    "Organ",	
+                    "Precalibration",
+                    "Positioning",
+                    "Scout view",	
+                    "Control files", 	
+                    "Protocol location",	
+                    "Subject forms location",	
+                    "file_name_y",	
+                    "check",	
+                    "data_type",	
+                    "nr_of_bytes",	
+                    "nr_of_blocks",	
+                    "pat_no",	
+                    "scanner_id",	
+                    "date",	
+                    "n_voxels_x",	
+                    "n_voxels_y",	
+                    "n_voxels_z",	
+                    "total_size_um_x",	
+                    "total_size_um_y",	
+                    "total_size_um_z",	
+                    "slice_thickness_um",	
+                    "pixel_size_um",	
+                    "slice_1_pos_um",	
+                    "min_intensity",	
+                    "max_intensity",	
+                    "mu_scaling",	
+                    "nr_of_samples",	
+                    "nr_of_projections",	
+                    "scan_dist_um",	
+                    "scanner_type",	
+                    "exposure_time",	
+                    "site",	
+                    "reference_line_um",	
+                    "recon_algo",	
+                    "pat_name_y",	
+                    "energy_V",	
+                    "intensity_uA",	
+                    "data_offset"
+                ]
+                empty_dict = {key:None for key in all_keys}
+                for key in empty_dict:
+                    if key in entered_fields.keys():
+                        empty_dict[key] = entered_fields[key]
+                
+                df = pd.DataFrame([empty_dict])
+                st.write(df)
+                insert_df_into_collection(df, "allData")
 
 def csv_import():
     """
@@ -270,7 +388,7 @@ def csv_import():
 
     """
     # Used to display the previous action that occured after the page was rerun
-    if st.session_state.prev_action != False:
+    if st.session_state.prev_action:
         st.warning(st.session_state.message)
 
     md = """#### Upload CSV
@@ -301,23 +419,7 @@ def image_upload():
     Page to demonstrate extracting image headers and pdf data automatically
 
     """
-    if 'add_to_db_button' not in st.session_state:
-        st.session_state.add_to_db_button = False
-    if 'keep' not in st.session_state:
-        st.session_state.keep = False
-    if 'overwrite' not in st.session_state:
-        st.session_state.overwrite = False
-    if 'cancel' not in st.session_state:
-        st.session_state.cancel = False
-    if 'prev_action' not in st.session_state:
-        st.session_state.prev_action = False
-    if 'message' not in st.session_state:
-        st.session_state.message = ""
-
-    def add_to_db_button_clicked():
-        st.session_state.add_to_db_button = True
-    
-    if st.session_state.prev_action != False:
+    if st.session_state.prev_action:
         st.warning(st.session_state.message)
 
     md = """#### Upload Image and PDF
