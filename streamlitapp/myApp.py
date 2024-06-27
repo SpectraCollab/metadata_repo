@@ -20,6 +20,12 @@ if 'prev_action' not in st.session_state:
     st.session_state.prev_action = False
 if 'message' not in st.session_state:
     st.session_state.message = ""
+if "isq_uploader_key" not in st.session_state:
+    st.session_state.isq_uploader_key = 0
+if "pdf_uploader_key" not in st.session_state:
+    st.session_state.pdf_uploader_key = 2
+if "csv_uploader_key" not in st.session_state:
+    st.session_state.csv_uploader_key = 0
 
 ## SESSION STATE FUNCTIONS ##
 def add_to_db_button_clicked():
@@ -37,14 +43,27 @@ def cancel_clicked():
     st.session_state.cancel = True
     st.session_state.prev_action = True
 
-def reset_button_session_states():
+def reset_session_states():
     st.session_state.keep = False
     st.session_state.overwrite = False
     st.session_state.cancel = False
     st.session_state.add_to_db_button = False
 
+    st.session_state.isq_df = False
+    st.session_state.pdf_df = False
+    st.session_state.form_df = False
+
+    st.session_state.isq_uploader_key += 1
+    st.session_state.pdf_uploader_key += 1
+    st.session_state.csv_uploader_key += 1
+
 def reset_prev_action():
     st.session_state.prev_action = False
+
+def print_states():
+    states = pd.DataFrame([st.session_state])
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(states, "\n")
 
 ## FUNCTIONS ##
 @st.cache_resource
@@ -92,12 +111,16 @@ def insert_df_into_collection(df, collection_name):
     None
 
     """
+
+    # Setting up connection to the desired db collection
     client = init_connection()
     db = client.spectra
     collection = db[collection_name]
 
+    # searching for duplicates in the "file_name_x" column
     duplicates = pd.DataFrame(collection.find({"file_name_x": {"$in":df["file_name_x"].tolist()}}))
 
+    # if we find duplicates
     if not duplicates.empty:
         st.warning(f"There are {duplicates.shape[0]} entries that already exist in the collection.")
         duplicates.drop(columns="_id", inplace=True)
@@ -115,31 +138,36 @@ def insert_df_into_collection(df, collection_name):
         col3.button("Cancel Upload", on_click=cancel_clicked)
 
         if st.session_state.keep:
+
+            # NEED TO IMPLEMENT DB QUERY
+
             st.session_state.message = f"Keeping Duplicates: Inserted ... items to database."
-            reset_button_session_states()
+            reset_session_states() # reset states and rerun script, essentially makes it look like the page has refreshed
             st.rerun()
 
         if st.session_state.overwrite:
-            collection.delete_many({"file_name_x": {"$in":df["file_name_x"].tolist()}})
+            collection.delete_many({"file_name_x": {"$in":df["file_name_x"].tolist()}}) # delete the duplicates in the db
             try:
-                insert = collection.insert_many(df.to_dict('records'))
+                insert = collection.insert_many(df.to_dict('records')) # insert all records in the new data
                 st.session_state.message = f"Overwrote Duplicates: Inserted {len(insert.inserted_ids)} items to database."
             except Exception as e:
                 st.write("Something went wrong...")
                 st.write(e)
-            reset_button_session_states()
+            reset_session_states()
             st.rerun()
 
         if st.session_state.cancel:
             st.session_state.message = f"Cancelled Data Upload"
-            reset_button_session_states()
+            reset_session_states()
             st.rerun()
+    
+    # if there are no duplicates, we can go straight to uploading
     else:
         try:
-            insert = collection.insert_many(df.to_dict('records'))
+            insert = collection.insert_many(df.to_dict('records')) # insert all new records into db
             st.session_state.message = f"No Duplicates Found: Inserted {len(insert.inserted_ids)} items to database!"
             st.session_state.prev_action = True
-            reset_button_session_states()
+            reset_session_states()
             st.rerun()
         except Exception as e:
             st.write("Something went wrong...")
@@ -147,10 +175,11 @@ def insert_df_into_collection(df, collection_name):
 
 ## PAGES ##
 def home():
-    """
-    Home page to display current database
+    print("\n\thome")
+    reset_session_states()
+    reset_prev_action()
+    print_states()
 
-    """
     # Convert MongoDB query results to DataFrame
     def to_df(query_results):
         df = pd.DataFrame(query_results)
@@ -165,8 +194,6 @@ def home():
     def calculate_age(birthdate):
         today = date.today()
         return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
-
-    reset_prev_action()
 
     # Page Setup
     allData = get_collection("allData")
@@ -247,18 +274,17 @@ This demonstration will show basic functionality of uploading image metadata to 
     st.markdown(md)
 
 def fillable_form():
-    """
-    Page to demonstrate uploading metadata manually through an online form
+    print("\n\tfillable_form")
+    print_states()
+    """#### Fillable Form
+    
+Users may have the option to manually add metadata at the subject level. This method maximizes simplicity while sacrificing ability to easily upload multiple subjects."""
+    if 'form_df' not in st.session_state:
+        st.session_state.form_df = False
 
-    """
     # Used to display the previous action that occured after the page was rerun
     if st.session_state.prev_action:
         st.warning(st.session_state.message)
-
-    md = """#### Fillable Form
-    
-Users may have the option to manually add metadata at the subject level. This method maximizes simplicity while sacrificing ability to easily upload multiple subjects."""
-    st.markdown(md)
 
     st.header("Add Image Metadata")
     with st.form("filters", clear_on_submit=False):
@@ -273,7 +299,7 @@ Users may have the option to manually add metadata at the subject level. This me
         "---"
 
         # Submit/reset buttons
-        submitted = st.form_submit_button("Submit Form", on_click=add_to_db_button_clicked)
+        submitted = st.form_submit_button("Submit Form")
 
         if submitted:
             if not file_name:
@@ -373,32 +399,32 @@ Users may have the option to manually add metadata at the subject level. This me
                     "intensity_uA",	
                     "data_offset"
                 ]
-                empty_dict = {key:None for key in all_keys}
-                for key in empty_dict:
+                data_dict = {key:None for key in all_keys}
+                for key in data_dict:
                     if key in entered_fields.keys():
-                        empty_dict[key] = entered_fields[key]
-                
-                df = pd.DataFrame([empty_dict])
-                st.write(df)
-                insert_df_into_collection(df, "allData")
+                        data_dict[key] = entered_fields[key]
+                st.session_state.form_df = pd.DataFrame([data_dict])
+
+    if isinstance(st.session_state.form_df, pd.DataFrame):
+        if not st.session_state.form_df.empty:
+            st.write(st.session_state.form_df)
+            st.button("Add to Database", on_click=add_to_db_button_clicked)
+            if st.session_state.add_to_db_button:
+                insert_df_into_collection(st.session_state.form_df, "allData")
 
 def csv_import():
-    """
-    Page to demonstrate uploading metadata from pre-compiled csv
-
-    """
+    print("\n\tcsv_import")
+    print_states()
+    """#### Upload CSV
+    
+Users may have the option to upload a pre-formatted CSV with the same fields as the Fillable Form. 
+This may allow users to upload metadata for multiple subjects at once."""
     # Used to display the previous action that occured after the page was rerun
     if st.session_state.prev_action:
         st.warning(st.session_state.message)
 
-    md = """#### Upload CSV
-    
-Users may have the option to upload a pre-formatted CSV with the same fields as the Fillable Form. 
-This may allow users to upload metadata for multiple subjects at once."""
-    st.markdown(md)
-
     st.header("Upload Metadata CSV")
-    uploaded_file = st.file_uploader("Accepted File Types: CSV, XLSX", type=['csv', 'xlsx'], accept_multiple_files=False)
+    uploaded_file = st.file_uploader("Accepted File Types: CSV, XLSX", type=['csv', 'xlsx'], accept_multiple_files=False, key=st.session_state.csv_uploader_key)
 
     if uploaded_file is not None:
         data = []
@@ -408,25 +434,27 @@ This may allow users to upload metadata for multiple subjects at once."""
             data = pd.read_excel(uploaded_file)
 
         # DO SOME ERROR CHECKING FOR REQUIRED FIELDS
-        data.drop(columns='Unnamed: 0', inplace=True)
+        data.drop(columns='Unnamed: 0', inplace=True, errors="ignore")
         st.write(data)
         st.button("Add to Database", on_click=add_to_db_button_clicked)
         if st.session_state.add_to_db_button:
             insert_df_into_collection(data, "allData")
         
 def image_upload():
-    """
-    Page to demonstrate extracting image headers and pdf data automatically
-
-    """
-    if st.session_state.prev_action:
-        st.warning(st.session_state.message)
-
-    md = """#### Upload Image and PDF
+    print("\n\timage_upload")
+    print_states()
+    """#### Upload Image and PDF
     
 Users have the option to upload batches of images and PDFs which can automatically be parsed for relevant metadata. 
 This option comes with increased complexity regarding security and server performance."""
-    st.markdown(md)
+
+    if 'isq_df' not in st.session_state:
+        st.session_state.isq_df = False
+    if 'pdf_df' not in st.session_state:
+        st.session_state.pdf_df = False
+
+    if st.session_state.prev_action:
+        st.warning(st.session_state.message)
 
     isq_loaded = False
     subjects_loaded = False
@@ -435,18 +463,28 @@ This option comes with increased complexity regarding security and server perfor
     col1, col2 = st.columns([0.5, 0.5])
     # Image Upload Section
     col1.header("""Upload Images""")
-    uploaded_images = col1.file_uploader("Accepted File Types: ISQ", type=['isq', 'isq;1'], accept_multiple_files=True)
+    uploaded_images = col1.file_uploader("Accepted File Types: ISQ", type=['isq', 'isq;1'], accept_multiple_files=True, key=st.session_state.isq_uploader_key)
     if uploaded_images != []:
-        isq_df = utils.file_reader.isq_to_df(uploaded_images)
-        col1.write(isq_df)
+        if isinstance(st.session_state.isq_df, pd.DataFrame):
+            print("ISQs Already Read")
+        else:
+            print("Reading ISQs")
+            st.session_state.isq_df = utils.file_reader.isq_to_df(uploaded_images)
+
+        col1.write(st.session_state.isq_df)
         isq_loaded = True
 
     # Study Upload Section
     col2.header("""Upload Subjects""")
-    uploaded_subjects = col2.file_uploader("Accepted File Types: PDF", type=['pdf'], accept_multiple_files=True)
+    uploaded_subjects = col2.file_uploader("Accepted File Types: PDF", type=['pdf'], accept_multiple_files=True, key=st.session_state.pdf_uploader_key)
     if uploaded_subjects != []:
-        subjects_df = utils.file_reader.pdf_to_df(uploaded_subjects)
-        col2.write(subjects_df)
+        if isinstance(st.session_state.pdf_df, pd.DataFrame):
+            print("PDFs Already Read")
+        else:
+            print("Reading PDFs")
+            st.session_state.pdf_df = utils.file_reader.pdf_to_df(uploaded_subjects)
+
+        col2.write(st.session_state.pdf_df)
         subjects_loaded = True
 
     # Fetching Protocols
@@ -458,12 +496,11 @@ This option comes with increased complexity regarding security and server perfor
 
     # Merging Uploaded Data
     if isq_loaded and subjects_loaded and protocols_loaded:
-        subjects_and_protocols = pd.merge(subjects_df, protocols_df, on=['study_ID'])
-        merged_df = pd.merge(subjects_and_protocols, isq_df, on=['meas_no'])
+        subjects_and_protocols = pd.merge(st.session_state.pdf_df, protocols_df, on=['study_ID'])
+        merged_df = pd.merge(subjects_and_protocols, st.session_state.isq_df, on=['meas_no'])
         st.header("Merged Dataset")
         if merged_df.empty:
             st.write("Unable to merge datasets...")
-
         # Writing new rows to database    
         else:
             st.write(merged_df)
