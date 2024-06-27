@@ -3,7 +3,6 @@ import pymongo
 import pandas as pd
 from datetime import date
 import utils.file_reader
-from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(layout="wide")
 
