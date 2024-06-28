@@ -178,6 +178,18 @@ def home():
     reset_prev_action()
     print_states()
 
+    if "sex_select_key" not in st.session_state:
+        st.session_state.sex_select_key = 0
+    if "age_select_key" not in st.session_state:
+        st.session_state.age_select_key = 3
+    if "study_select_key" not in st.session_state:
+        st.session_state.study_select_key = 6
+
+    def update_keys():
+        st.session_state.sex_select_key += 1
+        st.session_state.age_select_key += 1
+        st.session_state.study_select_key += 1
+
     # Convert MongoDB query results to DataFrame
     def to_df(query_results):
         df = pd.DataFrame(query_results)
@@ -218,16 +230,16 @@ This demonstration will show basic functionality of uploading image metadata to 
             studies = data["study_ID"].unique()
 
             # Query Params selection
-            sex_select = st.radio("Sex", ["All", "M", "F"])
-            age_select = st.slider("Minimum Age", 0, 100)
-            study_select = st.multiselect("Study ID", studies)
+            with st.expander("Participant Filters"):
+                sex_select = st.radio("Sex", ["All", "M", "F"], key=st.session_state.sex_select_key)
+                age_select = st.slider("Age Range", 0, 100, value=(0, 100), key=st.session_state.age_select_key)
 
-            "---"
+            study_select = st.multiselect("Study ID", studies, key=st.session_state.study_select_key)
 
             # Submit/reset buttons
             formCol1, formCol2 = st.columns([0.6,0.4])
             submitted = formCol1.form_submit_button("Submit Query")
-            reset = formCol2.form_submit_button("Reset")  
+            reset = formCol2.form_submit_button("Reset", on_click=update_keys)  
 
             # Run query if submit button is clicked
             if submitted:
@@ -241,9 +253,9 @@ This demonstration will show basic functionality of uploading image metadata to 
                 # Building Query
                 if sex_select != "All":
                     query["sex"] = sex_select 
-                if age_select > 0:
+                if age_select[0] > 0 or age_select[1] < 100:
                     data['age'] = data["birth_date"].apply(calculate_age)
-                    ids = data["_id"][(data["age"] >= age_select)].to_list()
+                    ids = data["_id"][(data["age"] >= age_select[0]) & (data["age"] <= age_select[1])].to_list()
                     data.drop('age', axis='columns')
                     sub_query = {'$in': ids}
                     query["_id"] = sub_query
