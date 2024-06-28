@@ -32,15 +32,12 @@ def add_to_db_button_clicked():
 
 def keep_clicked():
     st.session_state.keep = True
-    st.session_state.prev_action = True
 
 def overwrite_clicked():
     st.session_state.overwrite = True
-    st.session_state.prev_action = True
 
 def cancel_clicked():
     st.session_state.cancel = True
-    st.session_state.prev_action = True
 
 def reset_session_states():
     st.session_state.keep = False
@@ -98,7 +95,7 @@ def get_collection(collection_name):
     collection = db[collection_name]
     return collection
 
-def insert_df_into_collection(df, collection_name):
+def insert_df_into_collection(df, collection_name, page_name):
     """
     Inserts rows of a DataFrame as documents into a collection
 
@@ -139,7 +136,7 @@ def insert_df_into_collection(df, collection_name):
         if st.session_state.keep:
 
             # NEED TO IMPLEMENT DB QUERY
-
+            st.session_state.prev_action = page_name
             st.session_state.message = f"Keeping Duplicates: Inserted ... items to database."
             reset_session_states() # reset states and rerun script, essentially makes it look like the page has refreshed
             st.rerun()
@@ -148,6 +145,7 @@ def insert_df_into_collection(df, collection_name):
             collection.delete_many({"file_name_x": {"$in":df["file_name_x"].tolist()}}) # delete the duplicates in the db
             try:
                 insert = collection.insert_many(df.to_dict('records')) # insert all records in the new data
+                st.session_state.prev_action = page_name
                 st.session_state.message = f"Overwrote Duplicates: Inserted {len(insert.inserted_ids)} items to database."
             except Exception as e:
                 st.write("Something went wrong...")
@@ -156,6 +154,7 @@ def insert_df_into_collection(df, collection_name):
             st.rerun()
 
         if st.session_state.cancel:
+            st.session_state.prev_action = page_name
             st.session_state.message = f"Cancelled Data Upload"
             reset_session_states()
             st.rerun()
@@ -165,7 +164,7 @@ def insert_df_into_collection(df, collection_name):
         try:
             insert = collection.insert_many(df.to_dict('records')) # insert all new records into db
             st.session_state.message = f"No Duplicates Found: Inserted {len(insert.inserted_ids)} items to database!"
-            st.session_state.prev_action = True
+            st.session_state.prev_action = page_name
             reset_session_states()
             st.rerun()
         except Exception as e:
@@ -285,7 +284,7 @@ Users may have the option to manually add metadata at the subject level. This me
         st.session_state.study_change = False
 
     # Used to display the previous action that occured after the page was rerun
-    if st.session_state.prev_action:
+    if st.session_state.prev_action == 'form':
         st.warning(st.session_state.message)
     
     def study_change():
@@ -429,7 +428,7 @@ Users may have the option to manually add metadata at the subject level. This me
             st.write(st.session_state.form_df)
             st.button("Add to Database", on_click=add_to_db_button_clicked)
             if st.session_state.add_to_db_button:
-                insert_df_into_collection(st.session_state.form_df, "allData")
+                insert_df_into_collection(st.session_state.form_df, "allData", "form")
 
 def csv_import():
     print("\n\tcsv_import")
@@ -439,7 +438,7 @@ def csv_import():
 Users may have the option to upload a pre-formatted CSV with the same fields as the Fillable Form. 
 This may allow users to upload metadata for multiple subjects at once."""
     # Used to display the previous action that occured after the page was rerun
-    if st.session_state.prev_action:
+    if st.session_state.prev_action == "csv":
         st.warning(st.session_state.message)
 
     st.header("Upload Metadata CSV")
@@ -457,7 +456,7 @@ This may allow users to upload metadata for multiple subjects at once."""
         st.write(data)
         st.button("Add to Database", on_click=add_to_db_button_clicked)
         if st.session_state.add_to_db_button:
-            insert_df_into_collection(data, "allData")
+            insert_df_into_collection(data, "allData", "csv")
         
 def image_upload():
     print("\n\timage_upload")
@@ -472,7 +471,7 @@ This option comes with increased complexity regarding security and server perfor
     if 'pdf_df' not in st.session_state:
         st.session_state.pdf_df = False
 
-    if st.session_state.prev_action:
+    if st.session_state.prev_action == "isq":
         st.warning(st.session_state.message)
 
     isq_loaded = False
@@ -526,7 +525,7 @@ This option comes with increased complexity regarding security and server perfor
             st.button("Add to Database", on_click=add_to_db_button_clicked)
 
             if st.session_state.add_to_db_button:
-                insert_df_into_collection(merged_df, "allData")
+                insert_df_into_collection(merged_df, "allData", "isq")
 
 # Page and Sidebar Setup
 page_names_to_funcs = {
