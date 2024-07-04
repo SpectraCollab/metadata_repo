@@ -110,9 +110,4 @@ else:
 # Protocols Section
 st.header("Protocols")
 st.write(protocols_df)
-
-md = """Feel free to check out the GitHub repository:
-
-https://github.com/SpectraCollab/metadata_repo.git"""
-st.markdown(md)
         
