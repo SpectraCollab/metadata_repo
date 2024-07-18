@@ -1,0 +1,5 @@
+age,sex_assigned_at_birth,weight_kg,height_cm,disease_status,smoking_status,current_treatment,bone_alterting_meds,conventional_DMARDS,biological_DMARDS,steroid_use,study_id,time_interval_between_scans,groups,scan_date,joint_scanned,description_of_hand_scanned,length_of_scan_region_x,length_of_scan_region_y,length_of_scan_region_z,voxel_spacing_x,voxel_spacing_y,voxel_spacing_z,motion_score,file_type
+,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,

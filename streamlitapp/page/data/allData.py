@@ -19,29 +19,41 @@ if "study_select_key" not in st.session_state:
     st.session_state.study_select_key = 6
 
 def update_keys():
+    """
+    Callback function to update the keys on the filter buttons
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
     st.session_state.sex_select_key += 1
     st.session_state.age_select_key += 1
     st.session_state.study_select_key += 1
 
 # Convert MongoDB query results to DataFrame
 def to_df(query_results):
+    """
+    Converts database query results to a pandas dataframe
+
+    Parameters:
+    query_results (pymongo cursor): results from database query
+
+    Returns:
+    df (DataFrame): results in DataFrame format, or string if query results is empty
+    """
     df = pd.DataFrame(query_results)
     if not df.empty:
-        df['birth_date'] = pd.to_datetime(df['birth_date'])
-        df['birth_date'] = df['birth_date'].dt.date
         return df
     else:
         return "No Items Match Search"
-
-# Calculating age of subject based on birthdate
-def calculate_age(birthdate):
-    today = date.today()
-    return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
 
 # Page Setup
 allData = stutil.get_collection("allData")
 protocols = stutil.get_collection("protocols")
 protocols_df = pd.DataFrame(protocols.find({}))
+protocols_df.drop(columns="_id", inplace=True)
 data = to_df(allData.find({}))
 
 # All Data Section
@@ -50,7 +62,7 @@ md = """#### Welcome to the SPECTRA Metadata Repository
 
 This demonstration will show basic functionality of uploading image metadata to the database."""
 titleCol1.markdown(md)
-titleCol2.image("spectra.webp", width=250)
+titleCol2.image("assets/spectra.webp", width=250)
 st.header("All Data")
 
 # if there are no documents in the collection, data will be a string type
@@ -60,7 +72,7 @@ else:
     col1, col2 = st.columns([0.25, 0.75])
     # Filter Selection Form in the right column
     with col1.form("filters", clear_on_submit=False):
-        studies = data["study_ID"].unique()
+        studies = data["study_id"].unique()
 
         # Query Params selection
         with st.expander("Participant Filters"):
@@ -85,16 +97,15 @@ else:
 
             # Building Query
             if sex_select != "All":
-                query["sex"] = sex_select 
+                query["sex_assigned_at_birth"] = sex_select 
             if age_select[0] > 0 or age_select[1] < 100:
-                data['age'] = data["birth_date"].apply(calculate_age)
                 ids = data["_id"][(data["age"] >= age_select[0]) & (data["age"] <= age_select[1])].to_list()
                 data.drop('age', axis='columns')
                 sub_query = {'$in': ids}
                 query["_id"] = sub_query
             if study_select != []:
                 sub_query = {'$in': study_select}
-                query["study_ID"] = sub_query
+                query["study_id"] = sub_query
 
             # Execute Query       
             data = to_df(allData.find(query))
@@ -105,7 +116,12 @@ else:
             data = to_df(allData.find({}))
 
     # Displaying the DataFrame in the left column
+    data.drop(columns="_id", inplace=True)
     col2.write(data)
+
+st.header("Definitions")
+definitions  = pd.read_excel('assets/field_definitions.xlsx')
+st.write(definitions)
 
 # Protocols Section
 st.header("Protocols")

@@ -1,8 +1,14 @@
-import os
 import struct
 import datetime
+from datetime import date
 import pandas as pd
 import PyPDF2
+import pydicom
+import numpy as np
+import os
+
+import utils.streamlit_utils as stutil
+
 
 def read_isq_header(isq_file):
     """
@@ -206,6 +212,15 @@ def read_isq_header(isq_file):
     return keys, values
 
 def isq_to_df(uploaded_images):
+    """
+    Converts key and value lists from read_isq_header to a pandas DataFrame
+
+    Parameters:
+    uploaded_images (list(Uploaded_File)): Data to be processed
+
+    Returns:
+    isq_headers (DataFrame): dataframe of headers from image
+    """
     all_keys = []
     all_values = []
 
@@ -222,14 +237,22 @@ def isq_to_df(uploaded_images):
     isq_headers = pd.DataFrame(all_values, columns = all_keys)
 
     # adding column with file names in position 0
-    isq_headers.insert(0, "file_name", [uploaded_image.name for uploaded_image in uploaded_images])
+    isq_headers.insert(0, "file_type", [os.path.splitext(uploaded_image.name)[1] for uploaded_image in uploaded_images])
 
-    # delete column "fill" because it just contains zeros
-    isq_headers = isq_headers.drop(columns = ["fill"])
+    standardized_df = stutil.standardize_isq(isq_headers)
 
-    return isq_headers
+    return standardized_df
 
 def pdf_to_df(uploaded_subjects):
+    """
+    Converts fillable pdf to a pandas DataFrame
+
+    Parameters:
+    uploaded_images (list(Uploaded_File)): Data to be processed
+
+    Returns:
+    subjects_info (DataFrame): dataframe of fields from form
+    """
     all_keys = []
     all_values = []
 
@@ -258,46 +281,77 @@ def pdf_to_df(uploaded_subjects):
     
     # create dataframe (=table)
     subjects_info = pd.DataFrame(all_values, columns = all_keys)
+    subjects_info.rename(columns={'Text1': 'date'}, inplace=True)
+    subjects_info['date'] = pd.to_datetime(subjects_info["date"], dayfirst=True).dt.date
+    subjects_info['birth_date'] = pd.to_datetime(subjects_info["birth_date"], dayfirst=True).dt.date
 
     # adding column with file names in position 0
     subjects_info.insert(0, "file_name", [file.name for file in uploaded_subjects])
 
-    # find all the fields containing meas_no
-    meas_no_fields = []
-    for field in subjects_info.columns:
-        if "meas_no" in field:
-            meas_no_fields.append(field)
+    def strip_string(s):
+        return s.strip()
+    
+    subjects_info["study_id"] = subjects_info["study_ID"].apply(strip_string)
+    subjects_info.drop(columns="study_ID", inplace=True)
+    
+    standardized_df = stutil.standardize_pdf(subjects_info)
 
-    # if there are more than 1, we need to merge them
-    if len(meas_no_fields) > 1:
-        
-        print("Merging the columns " + str(meas_no_fields) + " in one column called meas_no")
-        
-        # prepare data or the merging
-        for field in meas_no_fields:
-            # replace empty cells with 0
-            subjects_info[field] = subjects_info[field].replace({"": "0"})
-            # transform cell content from strings to integers
-            subjects_info[field] = subjects_info[field].astype(int)
+    return standardized_df
+
+def dcm_to_df(uploaded_images):
+    """
+    Converts dicom image to a pandas DataFrame of header values
+
+    Parameters:
+    uploaded_images (list(Uploaded_File)): Data to be processed
+
+    Returns:
+    dcm_headers (DataFrame): dataframe of headers from image
+    """
+    attrs = set()
+    # read each image once to find keys
+    for file in uploaded_images:
+        obj = pydicom.dcmread(file)
+        attrs.update(obj.dir())
     
-        # rename the first column contaning meas_no_x to meas_no 
-        subjects_info = subjects_info.rename(columns={meas_no_fields[0]: "meas_no"})
-        # merge all cells to the first one
-        for i in range (1, len(meas_no_fields)):
-            subjects_info["meas_no"] += subjects_info[meas_no_fields[i]]
-            # delete the column that got merged
-            subjects_info = subjects_info.drop(columns=[meas_no_fields[i]])
-        
-        # make sure the resulting column contains integers
-        subjects_info['meas_no'] = subjects_info['meas_no'].astype(int)
-        
-    # if there is only 1, we have to make sure it is called meas_no
-    else:
-        if meas_no_fields[0] != "meas_no":
-            print("Renaming " + meas_no_fields[0] + " to meas_no")
-            subjects_info = subjects_info.rename(columns={meas_no_fields[0]: "meas_no"})
-            subjects_info['meas_no'] = subjects_info['meas_no'].astype(int)
-        else:
-            print("No change needed for the column meas_no")
+    all_keys = list(attrs)
+    columns_to_remove = [
+        'PixelData', 
+        'PatientName', 
+        'ReferencedPerformedProcedureStepSequence', 
+        'ReferencedImageSequence', 
+        'DerivationCodeSequence', 
+        'AnatomicRegionSequence',
+        'OtherPatientIDsSequence'
+        ]
     
-    return subjects_info
+    # this removes certain keys that pydicom has trouble interpreting the value of
+    for item in columns_to_remove:
+        if item in all_keys:
+            all_keys.remove(item)
+
+    all_values = []
+
+    # map for casting certain pydicom data types
+    typemap = {
+        pydicom.uid.UID: str,
+        pydicom.multival.MultiValue: list,
+        pydicom.sequence.Sequence: list,
+        pydicom.valuerep.PersonName: str
+    }
+    
+    def cast(x):
+        return typemap.get(type(x), lambda x: x)(x)
+
+    # iterate through each file again to get all values
+    for file in uploaded_images:
+        file.seek(0)
+        obj = pydicom.dcmread(file)
+        all_values.append([cast(obj.get(key, np.nan)) for key in all_keys])
+
+    dcm_headers = pd.DataFrame(all_values, columns=all_keys)
+    dcm_headers.insert(0, "file_type", [os.path.splitext(uploaded_image.name)[1] for uploaded_image in uploaded_images])
+
+    standardized_df = stutil.standardize_dcm(dcm_headers)
+
+    return standardized_df

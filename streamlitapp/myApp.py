@@ -1,3 +1,16 @@
+# ----------------------------------------------------------------
+# myApp.py 
+#
+# Created by: Chris Brunet
+# Created on: June 14, 2024
+#
+# Description: Streamlit web app for Spectra image metadata repository. 
+#
+# Usage: 
+#     1. Follow instructions in readme.md
+#     2. Run command 'streamlit run myApp.py'
+# ----------------------------------------------------------------
+
 import streamlit as st
 
 ## SESSION STATES ##
@@ -22,17 +35,21 @@ if "csv_uploader_key" not in st.session_state:
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "active_user" not in st.session_state:
+    st.session_state.active_user = None
+if "active_institution" not in st.session_state:
+    st.session_state.active_institution = None
 
-allData = st.Page("pages/data/allData.py", title="All Data", icon=":material/analytics:", default=True)
+# linking pages to .py files
+allData = st.Page("page/data/allData.py", title="All Data", icon=":material/analytics:", default=True)
+csv_upload = st.Page("page/upload/csvUpload.py", title="CSV Upload", icon=":material/table_rows:")
+fillable_form = st.Page("page/upload/form.py", title="Fillable Form", icon=":material/edit_note:")
+image_upload = st.Page("page/upload/imageUpload.py", title="Image Upload", icon=":material/add_photo_alternate:")
+profile = st.Page("page/account/profile.py", title=f"My Profile ({st.session_state.active_user})", icon=":material/person:")
+login = st.Page("page/account/login.py", title="Log In", icon=":material/login:")
+logout = st.Page("page/account/logout.py", title="Log Out", icon=":material/logout:")
 
-csv_upload = st.Page("pages/upload/csvUpload.py", title="CSV Upload", icon=":material/table_rows:")
-fillable_form = st.Page("pages/upload/form.py", title="Fillable Form", icon=":material/edit_note:")
-image_upload = st.Page("pages/upload/imageUpload.py", title="Image Upload", icon=":material/add_photo_alternate:")
-
-profile = st.Page("pages/account/profile.py", title="My Profile", icon=":material/person:")
-logout = st.Page("pages/account/logout.py", title="Log Out", icon=":material/logout:")
-login = st.Page("pages/account/login.py", title="Log In", icon=":material/login:")
-
+# setting up page navigation
 if st.session_state.logged_in:
     pg = st.navigation(
             {
@@ -45,4 +62,6 @@ else:
     pg = st.navigation([login])
 
 pg.run()
+
+
         

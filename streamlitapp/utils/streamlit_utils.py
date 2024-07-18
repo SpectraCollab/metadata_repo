@@ -2,25 +2,88 @@ import streamlit as st
 import pymongo
 import pandas as pd
 
+from utils.column_mappings import img_columns, participant_columns, study_columns
+
+## CALLBACK FUNCTIONS ##
+
 def add_to_db_button_clicked():
+    """
+    Callback function to set add to db clicked to be true
+
+    Paramaters:
+    None
+
+    Returns:
+    None
+    """
     st.session_state.add_to_db_button = True
 
 def keep_clicked():
+    """
+    Callback function to set keep clicked to be true
+
+    Paramaters:
+    None
+
+    Returns:
+    None
+    """
     st.session_state.keep = True
 
 def overwrite_clicked():
+    """
+    Callback function to set overwrite clicked to be true
+
+    Paramaters:
+    None
+
+    Returns:
+    None
+    """
     st.session_state.overwrite = True
 
 def cancel_clicked():
+    """
+    Callback function to set cancel clicked to be true
+
+    Paramaters:
+    None
+
+    Returns:
+    None
+    """
     st.session_state.cancel = True
 
+def reset_prev_action():
+    """
+    Callback function to reset the previous action session state
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
+    st.session_state.prev_action = False
+
+## OTHER FUNCTIONS ##
+
 def reset_session_states():
+    """
+    Resets most session states in order to keep website flow looking normal
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
     st.session_state.keep = False
     st.session_state.overwrite = False
     st.session_state.cancel = False
     st.session_state.add_to_db_button = False
 
-    st.session_state.isq_df = False
+    st.session_state.img_df = False
     st.session_state.pdf_df = False
     st.session_state.form_df = False
 
@@ -28,13 +91,162 @@ def reset_session_states():
     st.session_state.pdf_uploader_key += 1
     st.session_state.csv_uploader_key += 1
 
-def reset_prev_action():
-    st.session_state.prev_action = False
-
 def print_states():
+    """
+    Prints all session states to console in dataframe format
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
     states = pd.DataFrame([st.session_state])
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(states, "\n")
+
+def append_institution(df):
+    df['institution'] = st.session_state.active_institution
+    first_column = df.pop('institution')  
+    df.insert(0, 'institution', first_column)
+    return df
+
+def create_composite_id(df):
+    df["composite_id"] = df["age"].astype(str) + "_" + df["study_id"] + "_" + df["scan_date"].astype(str)
+    first_column = df.pop('composite_id')  
+    df.insert(0, 'composite_id', first_column)
+    return df
+
+def merge_dataframes(subjects, protocols, images):
+    try:
+        subjects_and_images = pd.merge(subjects, images, on=['scan_date'])
+    except:
+        return None
+
+    try:
+        merged_df = pd.merge(subjects_and_images, protocols, on=['study_id'])
+    except:
+        return None
+    
+    return merged_df
+
+def standardize_csv(csv_fields):
+    # creating empty standardized dataframe and adding apprpriate values from dcm_headers
+    csv_columns = participant_columns + study_columns + img_columns
+    standard_columns = {key:None for key in csv_columns}
+    df = pd.DataFrame(columns=csv_columns)
+    
+    special_columns = ['length_of_scan_region', 'voxel_spacing']
+
+    for col in csv_columns:
+        if col not in special_columns:
+            df[col] = csv_fields[col]
+            
+    df['length_of_scan_region'] = csv_fields.apply(
+        lambda row: [
+            round(row['length_of_scan_region_x'], 3), 
+            round(row['length_of_scan_region_y'], 3),
+            round(row['length_of_scan_region_z'], 3), 
+            ], 
+        axis=1
+    )
+
+    df['voxel_spacing'] = csv_fields.apply(
+        lambda row: [
+            round(row['voxel_spacing_x'], 3), 
+            round(row['voxel_spacing_y'], 3),
+            round(row['voxel_spacing_z'], 3), 
+            ], 
+        axis=1
+    )
+
+    return df
+
+def standardize_protocols(df):
+    standard_columns = {key:None for key in study_columns}
+    standardized_df = pd.DataFrame([standard_columns])
+    standardized_df['study_id'] = df['study_id']
+    standardized_df['time_interval_between_scans'] = df['Time points']
+    standardized_df['groups'] = df['Control files']
+    return standardized_df
+
+def standardize_dcm(dcm_headers):
+    # creating empty standardized dataframe and adding apprpriate values from dcm_headers
+    standard_columns = {key:None for key in img_columns}
+    df = pd.DataFrame([standard_columns])
+
+    df['scan_date'] = pd.to_datetime(dcm_headers['SeriesDate']).dt.date
+    df['file_type'] = dcm_headers['file_type']
+    
+    df['length_of_scan_region'] = dcm_headers.apply(
+        lambda row: [
+            round(row["Columns"] * row["PixelSpacing"][0], 3), 
+            round(row["Rows"] * row["PixelSpacing"][1], 3),
+            None 
+            ], 
+        axis=1
+    )
+
+    if "SliceThickness" in dcm_headers.columns:
+        df['voxel_spacing'] = dcm_headers.apply(
+            lambda row: [
+                round(row["PixelSpacing"][0], 3), 
+                round(row["PixelSpacing"][1], 3),
+                round(row["SliceThickness"], 3) 
+                ], 
+            axis=1
+        )
+    else:
+        df['voxel_spacing'] = dcm_headers.apply(
+            lambda row: [
+                round(row["PixelSpacing"][0], 3), 
+                round(row["PixelSpacing"][1], 3),
+                None 
+                ], 
+            axis=1
+        )
+
+    if "SeriesDescription" in dcm_headers.columns:
+        df['joint_scanned'] = dcm_headers['SeriesDescription']
+
+    return df
+
+def standardize_isq(isq_headers):
+    # creating empty standardized dataframe and adding apprpriate values from isq_headers
+    standard_columns = {key:None for key in img_columns}
+    df = pd.DataFrame([standard_columns])
+
+    df['scan_date'] = isq_headers['date']
+    df['file_type'] = isq_headers['file_type']
+    df['length_of_scan_region'] = isq_headers.apply(
+        lambda row: [round(row["total_size_um_x"] * 0.001, 3), round(row["total_size_um_y"] * 0.001, 3), round(row["total_size_um_z"] * 0.001, 3)], 
+        axis=1
+    )
+    df['voxel_spacing'] = isq_headers.apply(
+        lambda row: [round(row["pixel_size_um"] * 0.001, 3), round(row["pixel_size_um"] * 0.001, 3), round(row["pixel_size_um"] * 0.001, 3)], 
+        axis=1
+    )
+    return df
+
+def standardize_pdf(pdf_fields):
+    # creating standardized datafram and populating with relevant fields from pdf
+    standard_columns = {key:None for key in participant_columns}
+    df = pd.DataFrame([standard_columns])
+
+    df['age'] = pdf_fields.apply(
+            lambda row: row['date'].year - row['birth_date'].year - ((row['date'].month, row['date'].day) < (row['birth_date'].month, row['birth_date'].day)),
+            axis=1
+    )
+    df['sex_assigned_at_birth'] = pdf_fields['sex']
+    df['weight_kg'] = pdf_fields['weight_kg']
+    df['height_cm'] = pdf_fields['height_cm']
+
+    df['scan_date'] = pdf_fields['date']
+    df['study_id'] = pdf_fields['study_id']
+
+    return df
+
+## DATABASE FUNCTIONS ##
 
 @st.cache_resource
 def init_connection():
@@ -87,8 +299,11 @@ def insert_df_into_collection(df, collection_name, page_name):
     db = client.spectra
     collection = db[collection_name]
 
+    if "scan_date" in df.columns:
+        df["scan_date"] = df["scan_date"].astype(str)
+
     # searching for duplicates in the "file_name_x" column
-    duplicates = pd.DataFrame(collection.find({"file_name_x": {"$in":df["file_name_x"].tolist()}}))
+    duplicates = pd.DataFrame(collection.find({"composite_id": {"$in":df["composite_id"].tolist()}}))
 
     # if we find duplicates
     if not duplicates.empty:
@@ -97,8 +312,8 @@ def insert_df_into_collection(df, collection_name, page_name):
         st.write("Existing Data")
         st.write(duplicates)
 
-        searchfor = duplicates["file_name_x"].tolist()
-        df_duplicates = df[df["file_name_x"].str.contains('|'.join(searchfor))]
+        searchfor = duplicates["composite_id"].tolist()
+        df_duplicates = df[df["composite_id"].str.contains('|'.join(searchfor))]
         st.write("New Data")
         st.write(df_duplicates)
 
@@ -108,15 +323,18 @@ def insert_df_into_collection(df, collection_name, page_name):
         col3.button("Cancel Upload", on_click=cancel_clicked)
 
         if st.session_state.keep:
-
-            # NEED TO IMPLEMENT DB QUERY
+            df_non_duplicates = df[~df["composite_id"].str.contains('|'.join(searchfor))]
+            if df_non_duplicates.empty:
+                st.session_state.message = f"Keeping Duplicates: Inserted 0 items to database."
+            else:
+                insert = collection.insert_many(df_non_duplicates.to_dict('records')) # insert all records in the new data
+                st.session_state.message = f"Keeping Duplicates: Inserted {len(insert.inserted_ids)} items to database."
             st.session_state.prev_action = page_name
-            st.session_state.message = f"Keeping Duplicates: Inserted ... items to database."
             reset_session_states() # reset states and rerun script, essentially makes it look like the page has refreshed
             st.rerun()
 
         if st.session_state.overwrite:
-            collection.delete_many({"file_name_x": {"$in":df["file_name_x"].tolist()}}) # delete the duplicates in the db
+            collection.delete_many({"composite_id": {"$in":df["composite_id"].tolist()}}) # delete the duplicates in the db
             try:
                 insert = collection.insert_many(df.to_dict('records')) # insert all records in the new data
                 st.session_state.prev_action = page_name
@@ -144,3 +362,4 @@ def insert_df_into_collection(df, collection_name, page_name):
         except Exception as e:
             st.write("Something went wrong...")
             st.write(e)
+
