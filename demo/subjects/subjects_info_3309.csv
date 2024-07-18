@@ -1,4 +1,0 @@
-file_name,birth_date,sex,side_per_clinician,height_cm,pat_name,fractures_surgeries,metal_in_VOI,scanner_id_1,pat_no_1,meas_no,ctr_file_1,ref_line_1,saved_scout_1,side_1,comments_1,tech_1,weight_kg,study_ID,time_FU_6mo,time_BL,recent_imaging
-transmittal_3309_subject_1.pdf,14 Mar 1958,F,L,180,EUA_001,NO,NO,3309,2745,9538,78,208,YES,L,,RT,90,3309_HAND,,x,NO
-transmittal_3309_subject_3.pdf,04 Aug 1955,F,L,175,CJS_3043R,NO,NO,3309,3643,13628,78,206,NO,L,,RT,70,3309_HAND,,x,NO
-transmittal_3309_subject_2.pdf,15 Jun 1970,M,R,173,EUA_002,Hand surgery,NO,3309,2746,11111,77,204,YES,R,,RT,65,3309_HAND,x,x,MRI
