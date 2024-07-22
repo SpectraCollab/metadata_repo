@@ -106,18 +106,47 @@ def print_states():
         print(states, "\n")
 
 def append_institution(df):
+    """
+    Appends user's institution to the first column in a DataFrame
+
+    Paramaters:
+    df (DataFrame): initial DataFrame
+
+    Returns:
+    df (DataFrame): updated DataFrame
+    """
     df['institution'] = st.session_state.active_institution
     first_column = df.pop('institution')  
     df.insert(0, 'institution', first_column)
     return df
 
 def create_composite_id(df):
+    """
+    Creates a composite id by concatenating fields from dataframe
+
+    Paramaters:
+    df (DataFrame): initial DataFrame
+
+    Returns:
+    df (DataFrame): updated DataFrame
+    """
     df["composite_id"] = df["age"].astype(str) + "_" + df["study_id"] + "_" + df["scan_date"].astype(str)
     first_column = df.pop('composite_id')  
     df.insert(0, 'composite_id', first_column)
     return df
 
 def merge_dataframes(subjects, protocols, images):
+    """
+    Merges subjects, protocols, and images data into 1 dataframe
+
+    Paramaters:
+    subjects (DataFrame): subject level information 
+    protocols (DataFrame): study level information
+    images (DataFrame): image metadata
+
+    Returns:
+    merged_df (DataFrame): all 3 dataframes merged into 1
+    """
     try:
         subjects_and_images = pd.merge(subjects, images, on=['scan_date'])
     except:
@@ -131,9 +160,17 @@ def merge_dataframes(subjects, protocols, images):
     return merged_df
 
 def standardize_csv(csv_fields):
+    """
+    Maps fields from CSV upload to the standard database schema set in column_mappings.py 
+
+    Paramaters:
+    csv_fields (DataFrame): raw data from csv upload
+
+    Returns:
+    df (DataFrame): standardized dataframe to match db schema
+    """
     # creating empty standardized dataframe and adding apprpriate values from dcm_headers
     csv_columns = participant_columns + study_columns + img_columns
-    standard_columns = {key:None for key in csv_columns}
     df = pd.DataFrame(columns=csv_columns)
     
     special_columns = ['length_of_scan_region', 'voxel_spacing']
@@ -163,6 +200,15 @@ def standardize_csv(csv_fields):
     return df
 
 def standardize_protocols(df):
+    """
+    Maps fields from protocols upload to the standard database schema set in column_mappings.py 
+
+    Paramaters:
+    df (DataFrame): raw data from protocols upload
+
+    Returns:
+    df (DataFrame): standardized dataframe to match db schema
+    """
     standard_columns = {key:None for key in study_columns}
     standardized_df = pd.DataFrame([standard_columns])
     standardized_df['study_id'] = df['study_id']
@@ -171,6 +217,15 @@ def standardize_protocols(df):
     return standardized_df
 
 def standardize_dcm(dcm_headers):
+    """
+    Maps fields from dicom image header upload to the standard database schema set in column_mappings.py 
+
+    Paramaters:
+    csv_fields (DataFrame): raw data from dicom upload
+
+    Returns:
+    df (DataFrame): standardized dataframe to match db schema
+    """
     # creating empty standardized dataframe and adding apprpriate values from dcm_headers
     standard_columns = {key:None for key in img_columns}
     df = pd.DataFrame([standard_columns])
@@ -212,6 +267,15 @@ def standardize_dcm(dcm_headers):
     return df
 
 def standardize_isq(isq_headers):
+    """
+    Maps fields from isq image headers upload to the standard database schema set in column_mappings.py 
+
+    Paramaters:
+    csv_fields (DataFrame): raw data from isq upload
+
+    Returns:
+    df (DataFrame): standardized dataframe to match db schema
+    """
     # creating empty standardized dataframe and adding apprpriate values from isq_headers
     standard_columns = {key:None for key in img_columns}
     df = pd.DataFrame([standard_columns])
@@ -229,6 +293,15 @@ def standardize_isq(isq_headers):
     return df
 
 def standardize_pdf(pdf_fields):
+    """
+    Maps fields from PDF upload to the standard database schema set in column_mappings.py 
+
+    Paramaters:
+    csv_fields (DataFrame): raw data from pdf upload
+
+    Returns:
+    df (DataFrame): standardized dataframe to match db schema
+    """
     # creating standardized datafram and populating with relevant fields from pdf
     standard_columns = {key:None for key in participant_columns}
     df = pd.DataFrame([standard_columns])

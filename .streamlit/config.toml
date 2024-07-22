@@ -1,3 +1,2 @@
 [server]
 maxUploadSize = 400
-enableXsrfProtection = false
