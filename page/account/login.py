@@ -19,6 +19,7 @@ if st.button("Log in"):
             first_name = user.get("firstName")
             last_name = user.get("lastName")
             st.session_state.logged_in = True
+            st.session_state.active_user_id = user.get("_id")
             st.session_state.active_user = f"{first_name} {last_name}"
             st.session_state.active_institution = user.get("institution")
             st.rerun()

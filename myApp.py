@@ -35,6 +35,8 @@ if "csv_uploader_key" not in st.session_state:
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "active_user_id" not in st.session_state:
+    st.session_state.active_user_id = None
 if "active_user" not in st.session_state:
     st.session_state.active_user = None
 if "active_institution" not in st.session_state:
