@@ -238,6 +238,7 @@ def isq_to_df(uploaded_images):
 
     # adding column with file names in position 0
     isq_headers.insert(0, "file_type", [os.path.splitext(uploaded_image.name)[1] for uploaded_image in uploaded_images])
+    isq_headers.insert(0, "file_name", [os.path.splitext(uploaded_image.name)[0] for uploaded_image in uploaded_images])
 
     standardized_df = stutil.standardize_isq(isq_headers)
 
@@ -351,6 +352,7 @@ def dcm_to_df(uploaded_images):
 
     dcm_headers = pd.DataFrame(all_values, columns=all_keys)
     dcm_headers.insert(0, "file_type", [os.path.splitext(uploaded_image.name)[1] for uploaded_image in uploaded_images])
+    dcm_headers.insert(0, "file_name", [os.path.splitext(uploaded_image.name)[0] for uploaded_image in uploaded_images])
 
     standardized_df = stutil.standardize_dcm(dcm_headers)
 

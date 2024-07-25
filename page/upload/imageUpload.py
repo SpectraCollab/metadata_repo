@@ -90,9 +90,9 @@ if uploaded_subjects != []:
 
 # Fetching Protocols
 protocols = stutil.get_collection("protocols")
-protocols_df = pd.DataFrame(protocols.find({}))
-if not protocols_df.empty:
-    protocols_df = stutil.standardize_protocols(protocols_df)
+protocols_df_raw = pd.DataFrame(protocols.find({}))
+if not protocols_df_raw.empty:
+    protocols_df = stutil.standardize_protocols(protocols_df_raw)
     protocols_loaded = True
 
 # Merging Uploaded Data

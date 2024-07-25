@@ -1,6 +1,7 @@
 import streamlit as st
 import pymongo
 import pandas as pd
+import numpy as np
 
 from utils.column_mappings import img_columns, participant_columns, study_columns
 
@@ -149,6 +150,14 @@ def merge_dataframes(subjects, protocols, images):
     """
     try:
         subjects_and_images = pd.merge(subjects, images, on=['scan_date'])
+        
+        if 'age_x' in subjects_and_images.columns:
+            subjects_and_images['age'] = subjects_and_images['age_x']
+            subjects_and_images.drop(columns=['age_x', 'age_y'], inplace=True)
+
+        if 'study_id_x' in subjects_and_images.columns:
+            subjects_and_images['study_id'] = subjects_and_images['study_id_x']
+            subjects_and_images.drop(columns=['study_id_x', 'study_id_y'], inplace=True)
     except:
         return None
 
@@ -157,6 +166,7 @@ def merge_dataframes(subjects, protocols, images):
     except:
         return None
     
+    merged_df.drop(columns='file_name', inplace=True)
     return merged_df
 
 def standardize_csv(csv_fields):
@@ -209,8 +219,8 @@ def standardize_protocols(df):
     Returns:
     df (DataFrame): standardized dataframe to match db schema
     """
-    standard_columns = {key:None for key in study_columns}
-    standardized_df = pd.DataFrame([standard_columns])
+    standard_columns = {key: None for key in study_columns}
+    standardized_df = pd.DataFrame([standard_columns] * len(df))
     standardized_df['study_id'] = df['study_id']
     standardized_df['time_interval_between_scans'] = df['Time points']
     standardized_df['groups'] = df['Control files']
@@ -264,6 +274,13 @@ def standardize_dcm(dcm_headers):
     if "SeriesDescription" in dcm_headers.columns:
         df['joint_scanned'] = dcm_headers['SeriesDescription']
 
+    df['file_name'] = dcm_headers['file_name']
+    if 'PatientAge' in dcm_headers.columns:
+        df['age'] = dcm_headers["PatientAge"]
+    else: 
+        df['age'] = None
+    df['study_id'] = dcm_headers['StudyID']
+
     return df
 
 def standardize_isq(isq_headers):
@@ -282,6 +299,7 @@ def standardize_isq(isq_headers):
 
     df['scan_date'] = isq_headers['date']
     df['file_type'] = isq_headers['file_type']
+
     df['length_of_scan_region'] = isq_headers.apply(
         lambda row: [round(row["total_size_um_x"] * 0.001, 3), round(row["total_size_um_y"] * 0.001, 3), round(row["total_size_um_z"] * 0.001, 3)], 
         axis=1
@@ -290,6 +308,12 @@ def standardize_isq(isq_headers):
         lambda row: [round(row["pixel_size_um"] * 0.001, 3), round(row["pixel_size_um"] * 0.001, 3), round(row["pixel_size_um"] * 0.001, 3)], 
         axis=1
     )
+
+    # appdend to df
+    df['file_name'] = isq_headers['file_name']
+    df['age'] = None
+    df['study_id'] = isq_headers['scanner_id']
+
     return df
 
 def standardize_pdf(pdf_fields):
@@ -304,7 +328,7 @@ def standardize_pdf(pdf_fields):
     """
     # creating standardized datafram and populating with relevant fields from pdf
     standard_columns = {key:None for key in participant_columns}
-    df = pd.DataFrame([standard_columns])
+    df = pd.DataFrame([standard_columns] * len(pdf_fields))
 
     df['age'] = pdf_fields.apply(
             lambda row: row['date'].year - row['birth_date'].year - ((row['date'].month, row['date'].day) < (row['birth_date'].month, row['birth_date'].day)),
