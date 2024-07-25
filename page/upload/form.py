@@ -39,6 +39,8 @@ with st.form("Manual Form", clear_on_submit=False):
         participant_fields['conventional_DMARDS'] = st.text_input("Conventional DMARDS")
         participant_fields['biological_DMARDS'] = st.text_input("Biological DMARDS")
         participant_fields['steroid_use'] = st.text_input("Steriod Use")
+        participant_fields['motion_score'] = st.number_input("Motion Score")
+        participant_fields['description_of_hand_scanned'] = st.text_input("Description of Hand Scanned")
 
     with st.expander("Study Details*"):
         study_fields['study_id'] = st.selectbox("Study ID*", ["-", "3300_SPECTRA", "3309_HAND"])
@@ -49,7 +51,6 @@ with st.form("Manual Form", clear_on_submit=False):
         img_fields['scan_date'] = st.date_input("Scan Date*", value=None)
         img_fields['file_type'] = st.text_input("File Type")
         img_fields['joint_scanned'] = st.text_input("Joint Scanned")
-        img_fields['description_of_hand_scanned'] = st.text_input("Description of Hand Scanned")
         col1, col2, col3 = st.columns(3)
         length_x = col1.number_input("Length of Scan Region: x")
         length_y = col2.number_input("Length of Scan Region: y")
@@ -57,7 +58,6 @@ with st.form("Manual Form", clear_on_submit=False):
         voxel_x = col1.number_input("Voxel Spacing: x")
         voxel_y = col2.number_input("Voxel Spacing: y")
         voxel_z = col3.number_input("Voxel Spacing: z")
-        img_fields['motion_score'] = st.number_input("Motion Score")
 
     "---"
 
