@@ -7,9 +7,9 @@ print("\n\timage_upload")
 stutil.print_states()
 """#### Upload Image and PDF
 
-Drag and drop one or many images and participant transmittals to have the metadata automatically extracted and merged. Try it out with the demo data in the Dropbox link below:
+Drag and drop one or many images and participant transmittals to have the metadata automatically extracted and merged. Try it out with the demo data in the OneDrive link below:
 
-**Link Coming Soon**
+[Demo Files](https://uofc-my.sharepoint.com/:f:/g/personal/christopher_brunet_ucalgary_ca/Ekl7NK5y0qNFvzvNgZo1Nl8BWdlNptnQYrOazzDSdGuUZQ)
 """
 
 def process_images(uploaded_images):
