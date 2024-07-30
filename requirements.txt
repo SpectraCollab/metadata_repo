@@ -4,7 +4,6 @@ PyPDF2
 pymongo
 pydicom
 openpyxl
-google.oauth2.credentials
-google_auth_oauthlib.flow
-google.auth.transport.requests
-google.oauth2.id_token  
+google-auth 
+google-auth-oauthlib 
+google-auth-httplib2
