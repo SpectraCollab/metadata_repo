@@ -1,31 +1,16 @@
 import streamlit as st
-import pandas as pd
-import utils.streamlit_utils as stutil
+import streamlit.components.v1 as components
+import utils.auth as auth
 
 st.set_page_config(layout="centered")
 
-st.write("Enter Login Details Below:")
+st.header('Login to the Spectra Repository')
 
-email = st.text_input("Email")
-password = st.text_input("Password", type='password')
+# Fetch client_id and login_url
+client_id = auth.get_client_id()
+login_url = auth.get_login_url()
 
-if st.button("Log in"):
-    if email != '' and password != '':
-        users = stutil.get_collection('users')
-        query = users.find({"email": email, "password": password})
-        query_result = list(query)
-        if len(query_result) == 1:
-            user = query_result[0]
-            first_name = user.get("firstName")
-            last_name = user.get("lastName")
-            st.session_state.logged_in = True
-            st.session_state.active_user_id = user.get("_id")
-            st.session_state.active_user = f"{first_name} {last_name}"
-            st.session_state.active_institution = user.get("institution")
-            st.rerun()
-        elif len(query_result) == 0:
-            st.error("Invalid Email/Password")
-        else:
-            st.warning("Multiple users found with these credentials. Please contact admin.")
-    else:
-        st.warning("Please Enter an Email and Password")
+st.write(f'<a target="_self" href="{login_url}">Google login</a>', unsafe_allow_html=True)
+
+# Call the authentication function (ensure it handles the OAuth flow correctly)
+auth.login()
