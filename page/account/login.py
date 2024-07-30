@@ -10,7 +10,8 @@ st.header('Login to the Spectra Repository')
 client_id = auth.get_client_id()
 login_url = auth.get_login_url()
 
-st.write(f'<a target="_self" href="{login_url}">Google login</a>', unsafe_allow_html=True)
+# st.write(f'<a target="_self" href="{login_url}">Google login</a>', unsafe_allow_html=True)
+st.link_button("Google Login", login_url)
 
 # Call the authentication function (ensure it handles the OAuth flow correctly)
 auth.login()
