@@ -80,12 +80,9 @@ def login():
         # st.write(f"Credentials: {credentials}")
 
         if credentials:
-            st.session_state.logged_in = True
             user_info = get_user_info(credentials)
-            st.session_state.active_user_id = user_info.get("sub")
-            st.session_state.active_user = user_info.get("email")
-            st.rerun()
+            st.session_state.oauth_email = user_info.get("email")
         else:
             st.write("Failed to get credentials.")
     else:
-        st.write(f'Please use the Google Auth Link to Login')
+        st.write(f'')
