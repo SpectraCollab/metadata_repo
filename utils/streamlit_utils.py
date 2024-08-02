@@ -116,8 +116,7 @@ def append_institution(df):
     Returns:
     df (DataFrame): updated DataFrame
     """
-    # df['institution'] = st.session_state.active_institution
-    df['institution'] = 'UCalgary'
+    df['institution'] = st.session_state.active_user['institution']
     first_column = df.pop('institution')  
     df.insert(0, 'institution', first_column)
     return df

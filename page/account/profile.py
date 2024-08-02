@@ -14,7 +14,7 @@ if st.session_state.prev_action == 'profile':
     st.warning("Profile Information Updated")
 
 with st.form("User Info", clear_on_submit=False):
-    email = st.text_input("Email", value=active_user['email'].iloc[0])
+    email = st.write(f"Email: {active_user['email'].iloc[0]}")
     firstName = st.text_input("First Name", value=active_user['firstName'].iloc[0])
     lastName = st.text_input("Last Name", value=active_user['lastName'].iloc[0])
     institution = st.text_input("Institution", value=active_user['institution'].iloc[0])
@@ -24,13 +24,16 @@ with st.form("User Info", clear_on_submit=False):
             {"_id": st.session_state.active_user["id"]}, 
             {"$set":
                 {
-                    'email': email,
                     'firstName': firstName,
                     'lastName': lastName,
                     'institution': institution
                 }
             }
         )
-        st.session_state.active_user = f"{firstName} {lastName}"
+
+        st.session_state.active_user['firstName'] = firstName
+        st.session_state.active_user['lastName'] = lastName
+        st.session_state.active_user['institution'] = institution
+
         st.session_state.prev_action = 'profile'
         st.rerun()
