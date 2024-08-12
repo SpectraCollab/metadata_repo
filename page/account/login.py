@@ -48,7 +48,6 @@ if st.button("Log in"):
 st.header("Or")
 
 login_html = f"""<a
-    target="_self"
     href="{login_url}" 
     type="button" 
     class="login-with-google-btn" 
