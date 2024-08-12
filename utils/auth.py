@@ -31,7 +31,7 @@ def get_login_url():
         client_config,
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI)
-    authorization_url, _ = flow.authorization_url(prompt='consent')
+    authorization_url, _ = flow.authorization_url(access_type='offline', prompt='consent')
     return authorization_url
 
 def get_credentials(code):
@@ -50,35 +50,11 @@ def get_user_info(credentials):
         credentials.id_token, request, CLIENT_ID)
     return id_info
 
-def display_user():
-    # Get the code from the URL
-    code = st.query_params.get('code')
-    st.write(f"Authorization code: {code}")
-
-    if code:
-        credentials = get_credentials(code)
-        st.write(f"Credentials: {credentials}")
-
-        if credentials:
-            user_info = get_user_info(credentials)
-            user_email = user_info.get("email")
-            user_id = user_info.get("sub")
-            st.write(f"You're logged in as {user_email} and your ID is {user_id}")
-        else:
-            st.write("Failed to get credentials.")
-    else:
-        st.write(f'You must log in first!')
-
 def login():
     # Get the code from the URL
-
     code = st.query_params.get('code')
-    # st.write(f"Authorization code: {code}")
-
     if code:
         credentials = get_credentials(code)
-        # st.write(f"Credentials: {credentials}")
-
         if credentials:
             user_info = get_user_info(credentials)
             st.session_state.oauth_email = user_info.get("email")
