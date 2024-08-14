@@ -68,8 +68,6 @@ login_html = f"""<a
 
 st.write(login_html, unsafe_allow_html=True)
 
-# st.link_button("Google Login", login_url)
-
 # Call the authentication function (ensure it handles the OAuth flow correctly)
 auth.login()
 
@@ -95,4 +93,4 @@ if st.session_state.oauth_email:
         st.session_state.logged_in = True
         st.rerun()
     else:
-        st.warning("Oops, it looks like this Gmail account hasn't been approved by the Spectra Administrators. Please contact ... to get access to this repository.")
+        st.warning("Oops, it looks like this Gmail account hasn't been approved by the Spectra Administrators. Please contact spectra.collaboration@gmail.com to get access to this repository.")
