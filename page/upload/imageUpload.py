@@ -9,7 +9,7 @@ stutil.print_states()
 
 Drag and drop one or many images and participant transmittals to have the metadata automatically extracted and merged. Try it out with the demo data in the OneDrive link below:
 
-[Demo Files](https://uofc-my.sharepoint.com/:f:/g/personal/christopher_brunet_ucalgary_ca/Ekl7NK5y0qNFvzvNgZo1Nl8BWdlNptnQYrOazzDSdGuUZQ)
+[Demo Files](https://drive.google.com/drive/folders/1Hkk2Coo7mfz6Xl-4MKItVvJxCxbEKw_D?usp=sharing_eip&ts=66c50ec3)
 """
 
 def process_images(uploaded_images):
