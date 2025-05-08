@@ -7,9 +7,6 @@ st.header("Your Profile")
 
 active_user = st.session_state.member_info
 
-if st.session_state.prev_action == 'profile':
-    st.warning("Profile Information Updated")
-
 st.markdown(f"""
     **Member Name**: {active_user['member']['contact']['firstName']} {active_user['member']['contact']['lastName']}\n
     **Email**: {active_user['member']['loginEmail']}\n
