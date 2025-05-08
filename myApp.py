@@ -14,8 +14,6 @@
 import streamlit as st
 from streamlit_cookies_controller import CookieController
 
-controller = CookieController()
-
 ## SESSION STATES ##
 if 'add_to_db_button' not in st.session_state:
     st.session_state.add_to_db_button = False
@@ -39,7 +37,11 @@ if "csv_uploader_key" not in st.session_state:
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "member_info" not in st.session_state:
-    st.session_state.member_info = None    
+    st.session_state.member_info = None   
+
+if 'controller' not in st.session_state:
+    st.session_state.controller = CookieController()
+controller = st.session_state.controller
 
 login = st.Page("page/account/login.py", title="Log In", icon=":material/login:")
 
@@ -65,6 +67,3 @@ else:
     pg = st.navigation([login])
 
 pg.run()
-
-
-        

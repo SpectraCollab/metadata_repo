@@ -34,4 +34,3 @@ if auth_code is not None and state is not None:
         st.rerun()
     else:
         st.warning("Uh oh! You do not have premission to enter this site.")    
-
