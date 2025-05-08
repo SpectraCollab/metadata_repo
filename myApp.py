@@ -12,6 +12,9 @@
 # ----------------------------------------------------------------
 
 import streamlit as st
+from streamlit_cookies_controller import CookieController
+
+controller = CookieController()
 
 ## SESSION STATES ##
 if 'add_to_db_button' not in st.session_state:
@@ -35,10 +38,8 @@ if "csv_uploader_key" not in st.session_state:
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
-if "active_user" not in st.session_state:
-    st.session_state.active_user = None
-if "oauth_email" not in st.session_state:
-    st.session_state.oauth_email = None
+if "member_info" not in st.session_state:
+    st.session_state.member_info = None    
 
 login = st.Page("page/account/login.py", title="Log In", icon=":material/login:")
 
@@ -50,7 +51,7 @@ if st.session_state.logged_in:
     csv_upload = st.Page("page/upload/csvUpload.py", title="CSV Upload", icon=":material/table_rows:")
     fillable_form = st.Page("page/upload/form.py", title="Fillable Form", icon=":material/edit_note:")
     image_upload = st.Page("page/upload/imageUpload.py", title="Image Upload", icon=":material/add_photo_alternate:")
-    profile = st.Page("page/account/profile.py", title=f"My Profile ({st.session_state.active_user["firstName"]} {st.session_state.active_user["lastName"]})", icon=":material/person:")
+    profile = st.Page("page/account/profile.py", title=f"My Profile ({st.session_state.member_info["member"]["contact"]["firstName"]} {st.session_state.member_info["member"]["contact"]["lastName"]})", icon=":material/person:")
     logout = st.Page("page/account/logout.py", title="Log Out", icon=":material/logout:")
 
     pg = st.navigation(
