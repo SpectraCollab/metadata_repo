@@ -4,6 +4,6 @@ PyPDF2
 pymongo
 pydicom
 openpyxl
-google-auth 
-google-auth-oauthlib 
-google-auth-httplib2
+streamlit_cookies_controller
+streamlit_url_fragment
+requests
