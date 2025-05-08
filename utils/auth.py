@@ -11,13 +11,30 @@ WIX_CLIENT_ID = st.secrets["WIX_CLIENT_ID"]
 REDIRECT_URI = st.secrets["REDIRECT_URI"]  
 
 def generate_code_verifier(length=64):
+    """
+    Generate random code verifier string for PKCE flow
+
+    """
     return base64.urlsafe_b64encode(os.urandom(length)).decode('utf-8').rstrip('=')
 
 def generate_code_challenge(code_verifier):
+    """
+    Transforms code verifier using SHA-256
+    
+    """
     hashed = hashlib.sha256(code_verifier.encode('utf-8')).digest()
     return base64.urlsafe_b64encode(hashed).decode('utf-8').rstrip('=')
 
 def get_visitor_token():
+    """
+    Gets visitor token from Wix API
+    
+    Paramaters:
+    None
+
+    Returns:
+    visitor_token (String) : token needed to generate an auth url 
+    """
     auth_url = "https://www.wixapis.com/oauth2/token"
     payload = {
         'client_id': WIX_CLIENT_ID,
@@ -30,6 +47,17 @@ def get_visitor_token():
     return visitor_token
 
 def get_auth_url(visitor_token, code_challenge, state):
+    """
+    Generates an authentication url from Wix API
+    
+    Paramaters:
+    visitor_token (String) : token to validate request
+    code_challenge (String) : required for PKCE flow
+    state (String) : used for additional security
+
+    Returns:
+    login_url (String) : url where user can login with Spectra Collab account
+    """
     url = "https://www.wixapis.com/_api/redirects-api/v1/redirect-session"
     headers = {
     "Authorization": f"Bearer {visitor_token}",
@@ -57,6 +85,10 @@ def get_auth_url(visitor_token, code_challenge, state):
     return login_url
 
 def get_query_params():
+    """
+    Gets query parameters from header. Needed since code fragment.
+    
+    """
     url_with_fragment = get_fragment()
 
     parsed_url = urlparse(url_with_fragment)
@@ -69,6 +101,16 @@ def get_query_params():
     return code, state
 
 def get_member_token(code, code_verifier):
+    """
+    Gets member access token from Wix API
+    
+    Paramaters:
+    code (String) : auth code returned by wix with redirect uri after successful login
+    code_verifier (String) : used to match with code_challenge on Wix server for PKCE flow
+
+    Returns:
+    member_token (String) : access_token to make API requests 
+    """
     url = "https://www.wixapis.com/oauth2/token"
     headers = {
         'Content-Type': 'application/json'
@@ -87,6 +129,15 @@ def get_member_token(code, code_verifier):
     return member_token
 
 def get_member_info(member_token):
+    """
+    Gets member information
+    
+    Paramaters:
+    member_token (String) : required to access API
+
+    Returns:
+    member (JSON) : JSON list of member information
+    """
     url = "https://www.wixapis.com/members/v1/members/my?fieldSet=FULL"
     headers = {
         'Authorization': f'Bearer {member_token}', 
