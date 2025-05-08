@@ -3,6 +3,7 @@ import streamlit as st
 import requests
 import base64
 import hashlib
+import os
 from urllib.parse import urlparse, parse_qs
 from streamlit_url_fragment import get_fragment
 
