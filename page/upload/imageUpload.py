@@ -23,8 +23,9 @@ def process_images(uploaded_images):
     None
     """
     for i, file in enumerate(uploaded_images):
-        fileType = file.type
-        if fileType == 'application/dicom':
+        fileName = file.name
+        fileType = fileName.split(".")[1].lower()
+        if fileType == 'dcm':
             standardized_data = utils.file_reader.dcm_to_df([file])
             if i == 0:
                 st.session_state.img_df = standardized_data
@@ -56,7 +57,8 @@ protocols_loaded = False
 col1, col2 = st.columns([0.5, 0.5])
 # Image Upload Section
 col1.header("""Upload Images""")
-uploaded_images = col1.file_uploader("Accepted File Types: ISQ", type=['isq', 'isq;1', 'dcm', 'dcm;1'], accept_multiple_files=True, key=st.session_state.isq_uploader_key)
+uploaded_images = col1.file_uploader("Accepted File Types: ISQ, DCM", accept_multiple_files=True, key=st.session_state.isq_uploader_key)
+# uploaded_images = col1.file_uploader("Accepted File Types: ISQ, DCM", type=['.isq', '.isq;1', 'dcm', 'dcm;1'], accept_multiple_files=True, key=st.session_state.isq_uploader_key)
 if uploaded_images != []:
     if isinstance(st.session_state.img_df, pd.DataFrame):
         if st.session_state.img_df.shape[0] == len(uploaded_images):
