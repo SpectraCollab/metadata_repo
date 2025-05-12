@@ -20,7 +20,8 @@ state = st.session_state["auth_state"]
 login_url = auth.get_auth_url(visitor_token, code_challenge, state)
 
 st.header("Welcome to the Spectra Image Metadata Repository")
-st.link_button("Login With Specta Collab", login_url)
+st.markdown(f'<a href="{login_url}" target="_self">Login with SPECTRA Account</a>', unsafe_allow_html=True)
+# st.link_button("Login With Specta Collab", login_url)
 
 auth_code, state = auth.get_query_params()
 
