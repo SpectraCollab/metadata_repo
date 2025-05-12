@@ -1,17 +1,24 @@
 import streamlit as st
 import uuid
 import urllib3
+import base64
 
 from myApp import controller
 from utils import auth
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+    
 if "code_verifier" not in controller.getAll():
     controller.set("code_verifier", auth.generate_code_verifier())
 
 if "auth_state" not in st.session_state:
     st.session_state["auth_state"] = uuid.uuid4().hex
+
+login_image = get_base64_image("assets/login.png")
 
 code_verifier = controller.get("code_verifier")
 visitor_token = auth.get_visitor_token()
@@ -19,9 +26,15 @@ code_challenge = auth.generate_code_challenge(code_verifier)
 state = st.session_state["auth_state"]
 login_url = auth.get_auth_url(visitor_token, code_challenge, state)
 
-st.header("Welcome to the Spectra Image Metadata Repository")
-st.markdown(f'<a href="{login_url}" target="_self">Login with SPECTRA Account</a>', unsafe_allow_html=True)
-# st.link_button("Login With Specta Collab", login_url)
+st.header("Welcome to the SPECTRA Image Metadata Repository")
+st.write("The SPECTRA repository is web app designed to enable researchers to share image metadata accross multiple studies relating to arthritis research. The intent of this repository is to promote collaboration and encourage researchers to connect with each other if they find image metadata from another institution which may be useful to their research.")
+st.write("To access the repository, you must currently be registered as a SPECTRA member. If you are not registered, go to spectra-collab.org to create an account. If you are already a member, login using the button below.")
+html = f"""
+<a href="{login_url}">
+    <img src="data:image/png;base64,{login_image}" width="300">
+</a>
+"""
+st.markdown(html, unsafe_allow_html=True)
 
 auth_code, state = auth.get_query_params()
 
