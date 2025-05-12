@@ -19,6 +19,8 @@ if st.session_state.prev_action == 'form':
 
 protocols = stutil.get_collection("protocols")
 protocol_dict = {}
+protocols_df = pd.DataFrame(protocols.find({}))
+study_ids = protocols_df['study_ID'].unique().tolist()
 
 participant_fields = {key:None for key in participant_columns}
 study_fields = {key:None for key in study_columns}
@@ -43,9 +45,9 @@ with st.form("Manual Form", clear_on_submit=False):
         participant_fields['description_of_hand_scanned'] = st.text_input("Description of Hand Scanned")
 
     with st.expander("Study Details*"):
-        study_fields['study_id'] = st.selectbox("Study ID*", ["-", "3300_SPECTRA", "3309_HAND"])
-        study_fields['time_interval_between_scans'] = st.number_input("Time Interval Between Scans", step=1)
-        study_fields['groups'] = st.text_input("Groups")
+        study_fields['study_id'] = st.selectbox("Study ID*", study_ids)
+        study_fields['time_interval_between_scans'] = "Test"
+        study_fields['groups'] = None
 
     with st.expander("Image Details*"):
         img_fields['scan_date'] = st.date_input("Scan Date*", value=None)

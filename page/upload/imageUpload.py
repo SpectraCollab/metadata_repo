@@ -31,13 +31,16 @@ def process_images(uploaded_images):
                 st.session_state.img_df = standardized_data
             else: 
                 st.session_state.img_df = pd.concat([st.session_state.img_df, standardized_data], ignore_index=True)
-        else:
+        elif fileType == 'isq' or fileType == "isq;1":
             standardized_data = utils.file_reader.isq_to_df([file])
             if i == 0:
                 st.session_state.img_df = standardized_data
             else: 
                 st.session_state.img_df = pd.concat([st.session_state.img_df, standardized_data], ignore_index=True)
             st.session_state.img_df['scan_date'] = pd.to_datetime(st.session_state.img_df['scan_date'], format='%Y_%m_%d').dt.date
+        else:
+            st.error("Unrecognized File Type")
+            return None
     first_column = st.session_state.img_df.pop('scan_date')  
     st.session_state.img_df.insert(0, 'scan_date', first_column) 
 

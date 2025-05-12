@@ -106,21 +106,6 @@ def print_states():
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(states, "\n")
 
-def append_institution(df):
-    """
-    Appends user's institution to the first column in a DataFrame
-
-    Paramaters:
-    df (DataFrame): initial DataFrame
-
-    Returns:
-    df (DataFrame): updated DataFrame
-    """
-    df['institution'] = st.session_state.active_user['institution']
-    first_column = df.pop('institution')  
-    df.insert(0, 'institution', first_column)
-    return df
-
 def create_composite_id(df):
     """
     Creates a composite id by concatenating fields from dataframe
@@ -221,8 +206,8 @@ def standardize_protocols(df):
     """
     standard_columns = {key: None for key in study_columns}
     standardized_df = pd.DataFrame([standard_columns] * len(df))
-    standardized_df['study_id'] = df['study_id']
-    standardized_df['time_interval_between_scans'] = df['Time points']
+    standardized_df['study_id'] = df['study_ID']
+    standardized_df['time_interval_between_scans'] = df['Time points'].astype(str)
     standardized_df['groups'] = df['Control files']
     return standardized_df
 
@@ -335,8 +320,8 @@ def standardize_pdf(pdf_fields):
             axis=1
     )
     df['sex_assigned_at_birth'] = pdf_fields['sex']
-    df['weight_kg'] = pdf_fields['weight_kg']
-    df['height_cm'] = pdf_fields['height_cm']
+    df['weight_kg'] = pd.to_numeric(pdf_fields['weight_kg'], errors='coerce')    
+    df['height_cm'] = pd.to_numeric(pdf_fields['height_cm'], errors='coerce')    
 
     df['scan_date'] = pdf_fields['date']
     df['study_id'] = pdf_fields['study_id']
