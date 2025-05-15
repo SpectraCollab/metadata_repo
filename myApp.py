@@ -12,6 +12,7 @@
 # ----------------------------------------------------------------
 
 import streamlit as st
+import time
 from streamlit_cookies_controller import CookieController
 
 ## SESSION STATES ##
@@ -36,11 +37,15 @@ if "csv_uploader_key" not in st.session_state:
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "member_token" not in st.session_state:
+    st.session_state.member_token = None
 if "member_info" not in st.session_state:
     st.session_state.member_info = None   
 
 if 'controller' not in st.session_state:
     st.session_state.controller = CookieController()
+    time.sleep(5)
+
 controller = st.session_state.controller
 
 login = st.Page("page/account/login.py", title="Log In", icon=":material/login:")

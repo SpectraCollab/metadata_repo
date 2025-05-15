@@ -144,5 +144,43 @@ def get_member_info(member_token):
         'Content-Type': 'application/json' 
     }
     res = requests.get(url, headers=headers, verify=False)
-    member = res.json()
-    return member
+    res_json = res.json()
+    return res_json
+
+def get_member_cms_info(member_token, member_id):
+    """
+    Queries data items from the 'PostedMembers' collection to retrieve their info.
+
+    Parameters:
+    member_token (str): Required to access the Wix Data API.
+
+    Returns:
+    res_json: json list of given member details from the 'PostedMembers' collection,
+          or None if the request fails.
+    """
+    url = "https://www.wixapis.com/wix-data/v2/items/query"
+    headers = {
+        'Authorization': f'Bearer {member_token}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "dataCollectionId": "PostedMembers",
+        "query": {"filter": {
+                        "_owner": {
+                            "$eq": f"{member_id}"
+                        }
+                    }},
+        "returnTotalCount": False,
+        "consistentRead": False,
+        "appOptions": {},
+        "publishPluginOptions": {},
+        'f': 'json'
+    }
+    try:
+        res = requests.post(url, headers=headers, json=payload, verify=False)
+        res.raise_for_status()  # Raise an exception for bad status codes
+        res_json = res.json()
+        return res_json
+    except requests.exceptions.RequestException as e:
+        print(f"Error querying data items: {e}")
+        return None

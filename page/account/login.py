@@ -2,6 +2,7 @@ import streamlit as st
 import uuid
 import urllib3
 import base64
+import time
 
 from myApp import controller
 from utils import auth
@@ -14,6 +15,7 @@ def get_base64_image(image_path):
     
 if "code_verifier" not in controller.getAll():
     controller.set("code_verifier", auth.generate_code_verifier())
+    time.sleep(5)
 
 if "auth_state" not in st.session_state:
     st.session_state["auth_state"] = uuid.uuid4().hex
@@ -40,9 +42,9 @@ auth_code, state = auth.get_query_params()
 
 if auth_code is not None and state is not None:
     st.query_params.clear()
-    member_token = auth.get_member_token(auth_code, code_verifier)    
-    st.session_state.member_info = auth.get_member_info(member_token)
-
+    st.session_state.member_token = auth.get_member_token(auth_code, code_verifier)    
+    st.session_state.member_info = auth.get_member_info(st.session_state.member_token)
+    
     if st.session_state.member_info["member"]["status"] == "APPROVED":
         st.session_state.logged_in = True
         st.rerun()
