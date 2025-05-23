@@ -47,7 +47,7 @@ if uploaded_file is not None:
         else:
             # displaying data and adding to database
             data = stutil.standardize_csv(data)
-            # data = stutil.append_institution(data)
+            data = stutil.append_institution(data)
             data = stutil.create_composite_id(data)
             st.write(data)
             st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)

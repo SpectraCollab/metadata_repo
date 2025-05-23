@@ -84,7 +84,7 @@ with st.form("Manual Form", clear_on_submit=False):
 # displaying data and adding to database
 if isinstance(st.session_state.form_df, pd.DataFrame):
     if not st.session_state.form_df.empty:
-        # st.session_state.form_df = stutil.append_institution(st.session_state.form_df)
+        st.session_state.form_df = stutil.append_institution(st.session_state.form_df)
         st.session_state.form_df = stutil.create_composite_id(st.session_state.form_df)
         st.write(st.session_state.form_df)
         st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)

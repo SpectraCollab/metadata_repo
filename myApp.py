@@ -40,7 +40,9 @@ if "logged_in" not in st.session_state:
 if "member_token" not in st.session_state:
     st.session_state.member_token = None
 if "member_info" not in st.session_state:
-    st.session_state.member_info = None   
+    st.session_state.member_info = None
+if "member_cms" not in st.session_state:
+    st.session_state.member_cms = None    
 
 if 'controller' not in st.session_state:
     st.session_state.controller = CookieController()

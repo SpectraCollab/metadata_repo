@@ -46,6 +46,7 @@ if auth_code is not None and state is not None:
     st.session_state.member_info = auth.get_member_info(st.session_state.member_token)
     
     if st.session_state.member_info["member"]["status"] == "APPROVED":
+        st.session_state.member_cms = auth.get_member_cms_info(st.session_state.member_token, st.session_state.member_info["member"]["id"])
         st.session_state.logged_in = True
         st.rerun()
     else:

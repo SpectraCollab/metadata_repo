@@ -1,7 +1,6 @@
 import streamlit as st
 import pymongo
 import pandas as pd
-import numpy as np
 
 from utils.column_mappings import img_columns, participant_columns, study_columns
 
@@ -326,6 +325,21 @@ def standardize_pdf(pdf_fields):
     df['scan_date'] = pdf_fields['date']
     df['study_id'] = pdf_fields['study_id']
 
+    return df
+
+def append_institution(df):
+    """
+    Appends user's institution to the first column in a DataFrame
+
+    Paramaters:
+    df (DataFrame): initial DataFrame
+
+    Returns:
+    df (DataFrame): updated DataFrame
+    """
+    df['institution'] = st.session_state.member_cms["dataItems"][0]["data"]["universityInstitution"]
+    first_column = df.pop('institution')  
+    df.insert(0, 'institution', first_column)
     return df
 
 ## DATABASE FUNCTIONS ##

@@ -108,7 +108,7 @@ if images_loaded and subjects_loaded and protocols_loaded:
     st.header("Merged Dataset")
     if isinstance(merged_df, pd.DataFrame):
         # Writing new rows to database    
-        # merged_df = stutil.append_institution(merged_df)
+        merged_df = stutil.append_institution(merged_df)
         merged_df = stutil.create_composite_id(merged_df)
         st.write(merged_df)
         st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
