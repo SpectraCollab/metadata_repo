@@ -41,10 +41,15 @@ def get_visitor_token():
         'grant_type': 'anonymous',
         'f': 'json'
     }
-    res = requests.post(auth_url, data=payload, verify=False)
-    res_json = res.json()
-    visitor_token = res_json["access_token"]
-    return visitor_token
+    try:
+        res = requests.post(auth_url, data=payload, verify=False)
+        res.raise_for_status()
+        res_json = res.json()
+        visitor_token = res_json["access_token"]
+        return visitor_token
+    except requests.exceptions.RequestException as e:
+        print(f"Error requesting visitor token: {e}")
+        return None
 
 def get_auth_url(visitor_token, code_challenge, state):
     """
@@ -78,12 +83,15 @@ def get_auth_url(visitor_token, code_challenge, state):
         }
     }
 
-    response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
-    login_url = response.json().get("redirectSession", {}).get("fullUrl")
-
-    return login_url
-
+    try:
+        res = requests.post(url, headers=headers, json=payload)
+        res.raise_for_status()
+        login_url = res.json().get("redirectSession", {}).get("fullUrl")
+        return login_url
+    except requests.exceptions.RequestException as e:
+        print(f"Error requesting login url: {e}")
+        return None
+    
 def get_query_params():
     """
     Gets query parameters from header. Needed since code fragment.
@@ -123,10 +131,15 @@ def get_member_token(code, code_verifier):
         'codeVerifier': code_verifier,
         'f': 'json'
     }
-    res = requests.post(url, headers=headers, json=payload, verify=False)
-    res_json = res.json()
-    member_token = res_json["access_token"]
-    return member_token
+    try:
+        res = requests.post(url, headers=headers, json=payload, verify=False)
+        res.raise_for_status()
+        res_json = res.json()
+        member_token = res_json["access_token"]
+        return member_token
+    except requests.exceptions.RequestException as e:
+        print(f"Error requesting access token: {e}")
+        return None
 
 def get_member_info(member_token):
     """
@@ -143,10 +156,15 @@ def get_member_info(member_token):
         'Authorization': f'Bearer {member_token}', 
         'Content-Type': 'application/json' 
     }
-    res = requests.get(url, headers=headers, verify=False)
-    res_json = res.json()
-    return res_json
-
+    try:
+        res = requests.get(url, headers=headers, verify=False)
+        res.raise_for_status()
+        res_json = res.json()
+        return res_json
+    except requests.exceptions.RequestException as e:
+        print(f"Error requesting member info: {e}")
+        return None
+    
 def get_member_cms_info(member_token, member_id):
     """
     Queries data items from the 'PostedMembers' collection to retrieve their info.
@@ -178,7 +196,7 @@ def get_member_cms_info(member_token, member_id):
     }
     try:
         res = requests.post(url, headers=headers, json=payload, verify=False)
-        res.raise_for_status()  # Raise an exception for bad status codes
+        res.raise_for_status()
         res_json = res.json()
         return res_json
     except requests.exceptions.RequestException as e:
