@@ -78,8 +78,9 @@ if uploaded_images != []:
         st.warning("Image headers must contain scan_date and file_name. One or more images are missing this info.")
         st.session_state.img_df = None
 
-    col1.write(st.session_state.img_df)
-    images_loaded = True
+    if st.session_state.img_df is not None:
+        col1.write(st.session_state.img_df)
+        images_loaded = True
 
 # Study Upload Section
 col2.header("""Upload Subjects""")
@@ -103,8 +104,9 @@ if uploaded_subjects != []:
         st.warning("All transmittals must contain age, sex_assigned_at_birth, weight_kg and file_name. One or more transmittals is missing this info.")
         st.session_state.pdf_df = None
 
-    col2.write(st.session_state.pdf_df)
-    subjects_loaded = True
+    if st.session_state.pdf_df is not None:
+        col2.write(st.session_state.pdf_df)
+        subjects_loaded = True
 
 # Fetching Protocols
 protocols = stutil.get_collection("protocols")
