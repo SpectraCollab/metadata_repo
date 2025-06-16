@@ -43,15 +43,32 @@ if uploaded_file is not None:
     if len(difference) == 0:
         # checking for null values in file name
         if (data['age'].isna().any()) or (data['study_id'].isna().any()) or (data['scan_date'].isna().any()):
-            st.warning("Spreadsheet is missing information in required fields. Please fill in required fields and try again.")
+            st.warning("Spreadsheet is missing information in required fields. Required fields are: age, study_id, scan_date. Please fill in required fields and try again.")
         else:
             # displaying data and adding to database
             data = stutil.standardize_csv(data)
             data = stutil.append_institution(data)
-            data = stutil.create_composite_id(data)
-            st.write(data)
-            st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
-            if st.session_state.add_to_db_button:
-                stutil.insert_df_into_collection(data, "allData", "csv")
+            if data is not None:
+                data = stutil.create_composite_id(data)
+                st.write(data)
+                st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
+                if st.session_state.add_to_db_button:
+                    stutil.insert_df_into_collection(data, "allData", "csv")
     else: 
         st.warning("Data must match template headers. Please try again.")
+
+
+"""
+#### How to use CSV Uploader
+
+- Download the [Data Template]('assets/spreadsheet_template.csv') and fill in each field with image metadata
+
+- Each row represents a new image or image series
+
+- **Required Fields** are: age, study_id, scan_date
+
+- If you do not have information for a non-required field, you can leave it blank
+
+- Do not remove or add columns to the CSV. The data must match the template headings
+
+"""

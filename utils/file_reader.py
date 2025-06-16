@@ -264,7 +264,6 @@ def pdf_to_df(uploaded_subjects):
 
         # get keys for the current subject
         current_keys = list(ff.keys())
-
         # get the values for the current subject
         current_values = []
         for k,v in ff.items():

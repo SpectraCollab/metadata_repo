@@ -64,26 +64,26 @@ This demonstration will show basic functionality of uploading image metadata to 
 titleCol1.markdown(md)
 titleCol2.image("assets/spectra.webp", width=250)
 st.header("All Data")
+st.write("This table displays all of the image metadata uploaded by SPECTRA members. Use the filters to find images that may be relevant to your work.")
 
 # if there are no documents in the collection, data will be a string type
 if type(data) == str:
     st.write("No data to display.")
 else:
-    col1, col2 = st.columns([0.25, 0.75])
     # Filter Selection Form in the right column
-    with col1.form("filters", clear_on_submit=False):
+    with st.form("filters", clear_on_submit=False):
+        formCol1, formCol2 = st.columns([0.6,0.4])
         studies = data["study_id"].unique()
 
         # Query Params selection
-        with st.expander("Participant Filters"):
+        with formCol1.expander("Participant Filters"):
             sex_select = st.radio("Sex", ["All", "M", "F"], key=st.session_state.sex_select_key)
             age_select = st.slider("Age Range", 0, 100, value=(0, 100), key=st.session_state.age_select_key)
 
-        study_select = st.multiselect("Study ID", studies, key=st.session_state.study_select_key)
+        study_select = formCol1.multiselect("Study ID", studies, key=st.session_state.study_select_key)
 
         # Submit/reset buttons
-        formCol1, formCol2 = st.columns([0.6,0.4])
-        submitted = formCol1.form_submit_button("Submit Query")
+        submitted = formCol2.form_submit_button("Submit Query")
         reset = formCol2.form_submit_button("Reset", on_click=update_keys)  
 
         # Run query if submit button is clicked
@@ -117,13 +117,17 @@ else:
 
     # Displaying the DataFrame in the left column
     data.drop(columns="_id", inplace=True)
-    col2.write(data)
+    st.write(data)
+    md = """<sup>* "None" in any field indicates no data was provided</sup>"""
+    st.write(md, unsafe_allow_html=True)
 
 st.header("Definitions")
 definitions  = pd.read_excel('assets/field_definitions.xlsx')
+st.write("Below are brief definitions and expected data types of each field in 'All Data'.")
 st.write(definitions)
 
 # Protocols Section
 st.header("Protocols")
+st.write("Below are the protocols for various imaging studies. All uploaded images must be associated with a Study ID.")
 st.write(protocols_df)
         

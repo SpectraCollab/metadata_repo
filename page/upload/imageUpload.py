@@ -7,10 +7,11 @@ print("\n\timage_upload")
 stutil.print_states()
 """#### Upload Image and PDF
 
-Drag and drop one or many images and participant transmittals to have the metadata automatically extracted and merged. Try it out with the demo data in the OneDrive link below:
+Drag and drop one or many images and participant transmittals to have the metadata automatically extracted and merged. Try it out with the demo data in the Google Drive link below:
 
-[Demo Files](https://drive.google.com/drive/folders/1Hkk2Coo7mfz6Xl-4MKItVvJxCxbEKw_D?usp=sharing_eip&ts=66c50ec3)
 """
+
+st.link_button("Demo Files", 'https://drive.google.com/drive/folders/1Hkk2Coo7mfz6Xl-4MKItVvJxCxbEKw_D?usp=sharing_eip&ts=66c50ec3')
 
 def process_images(uploaded_images):
     """
@@ -86,9 +87,13 @@ if uploaded_subjects != []:
         else:
             print("Number of PDFs has changed... Re-reading PDFs")
             st.session_state.pdf_df = utils.file_reader.pdf_to_df(uploaded_subjects)
+            filenames = [subject.name.split(".")[0] for subject in uploaded_subjects]
+            st.session_state.pdf_df['file_name'] = filenames
     else:
         print("PDFs detected... reading images")
         st.session_state.pdf_df = utils.file_reader.pdf_to_df(uploaded_subjects)
+        filenames = [subject.name.split(".")[0] for subject in uploaded_subjects]
+        st.session_state.pdf_df['file_name'] = filenames
 
     col2.write(st.session_state.pdf_df)
     subjects_loaded = True
@@ -109,11 +114,28 @@ if images_loaded and subjects_loaded and protocols_loaded:
     if isinstance(merged_df, pd.DataFrame):
         # Writing new rows to database    
         merged_df = stutil.append_institution(merged_df)
-        merged_df = stutil.create_composite_id(merged_df)
-        st.write(merged_df)
-        st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
+        if merged_df is not None:
+            merged_df = stutil.create_composite_id(merged_df)
+            st.write(merged_df)
+            st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
 
-        if st.session_state.add_to_db_button:
-            stutil.insert_df_into_collection(merged_df, "allData", "isq")
+            if st.session_state.add_to_db_button:
+                stutil.insert_df_into_collection(merged_df, "allData", "isq")
     else:
         st.write("Unable to merge datasets")
+
+
+"""
+#### How to use the Image Uploader
+
+- **IMPORTANT**: to successfully merge Image and Transmittal data, each corresponding file must end with the same numerical value and an underscore ("_") prior to that value (ie. "image_1.dcm" & "transmittal_1.pdf")
+
+- Currently the supported file types are .ISQ, .DCM
+
+- When using a DCM image series, please only upload the **LAST** image in the series
+
+- One PDF transmittal matching that of the Transmittal Template must be uploaded for each image file
+
+- Fields from the respective Study IDs are concatenated to the data entry from the **Protocols Table** based on the Study ID of the Transmittal 
+
+"""

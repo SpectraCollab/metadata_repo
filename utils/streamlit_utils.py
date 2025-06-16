@@ -115,9 +115,9 @@ def create_composite_id(df):
     Returns:
     df (DataFrame): updated DataFrame
     """
-    df["composite_id"] = df["age"].astype(str) + "_" + df["study_id"] + "_" + df["scan_date"].astype(str)
-    first_column = df.pop('composite_id')  
-    df.insert(0, 'composite_id', first_column)
+    df["composite_id"] = df["sex_assigned_at_birth"] + df["age"].astype(str) + df["weight_kg"].astype(str) + "_" + df["study_id"] + "_" + df["scan_date"].astype(str) + "_" + df["institution"]
+    last_column = df.pop('composite_id')  
+    df.insert(len(df.columns), 'composite_id', last_column)
     return df
 
 def merge_dataframes(subjects, protocols, images):
@@ -132,8 +132,17 @@ def merge_dataframes(subjects, protocols, images):
     Returns:
     merged_df (DataFrame): all 3 dataframes merged into 1
     """
+
+    def extract_series_num(filename_str):
+        list = filename_str.split("_")
+        num = list[-1]
+        return num
+
+    images['series_num'] = images['file_name'].apply(extract_series_num)
+    subjects['series_num'] = subjects['file_name'].apply(extract_series_num)
+
     try:
-        subjects_and_images = pd.merge(subjects, images, on=['scan_date'])
+        subjects_and_images = pd.merge(subjects, images, on=['series_num'])
         
         if 'age_x' in subjects_and_images.columns:
             subjects_and_images['age'] = subjects_and_images['age_x']
@@ -142,6 +151,10 @@ def merge_dataframes(subjects, protocols, images):
         if 'study_id_x' in subjects_and_images.columns:
             subjects_and_images['study_id'] = subjects_and_images['study_id_x']
             subjects_and_images.drop(columns=['study_id_x', 'study_id_y'], inplace=True)
+
+        if 'scan_date_x' in subjects_and_images.columns:
+            subjects_and_images['scan_date'] = subjects_and_images['scan_date_x']
+            subjects_and_images.drop(columns=['scan_date_x', 'scan_date_y'], inplace=True)
     except:
         return None
 
@@ -150,7 +163,7 @@ def merge_dataframes(subjects, protocols, images):
     except:
         return None
     
-    merged_df.drop(columns='file_name', inplace=True)
+    merged_df.drop(columns=['file_name_x', 'file_name_y', 'series_num'], inplace=True)
     return merged_df
 
 def standardize_csv(csv_fields):
@@ -337,10 +350,15 @@ def append_institution(df):
     Returns:
     df (DataFrame): updated DataFrame
     """
-    df['institution'] = st.session_state.member_cms["dataItems"][0]["data"]["universityInstitution"]
-    first_column = df.pop('institution')  
-    df.insert(0, 'institution', first_column)
-    return df
+    try:
+        df['institution'] = st.session_state.member_cms["dataItems"][0]["data"]["universityInstitution"]
+        first_column = df.pop('institution')  
+        df.insert(0, 'institution', first_column)
+        return df
+    except:
+        md = """You must have an University/Institution on you Spectra Member profile. You can update this here: [Update Profile](https://www.spectra-collab.org/members/update)"""
+        st.warning(md)
+        return None
 
 ## DATABASE FUNCTIONS ##
 

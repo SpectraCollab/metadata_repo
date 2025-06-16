@@ -37,10 +37,10 @@ with st.form("Manual Form", clear_on_submit=False):
         participant_fields['disease_status'] = st.text_input("Disease Status")
         participant_fields['smoking_status'] = st.radio("Smoking Status", ["Y", "N"])
         participant_fields['current_treatment'] = st.text_input("Current Treatment")
-        participant_fields['bone_alterting_meds'] = st.text_input("Bone Altering Meds")
-        participant_fields['conventional_DMARDS'] = st.text_input("Conventional DMARDS")
-        participant_fields['biological_DMARDS'] = st.text_input("Biological DMARDS")
-        participant_fields['steroid_use'] = st.text_input("Steriod Use")
+        participant_fields['bone_alterting_meds'] = st.radio("Bone Altering Meds", ["Y", "N"])
+        participant_fields['conventional_DMARDS'] = st.radio("Conventional DMARDS", ["Y", "N"])
+        participant_fields['biological_DMARDS'] = st.radio("Biological DMARDS", ["Y", "N"])
+        participant_fields['steroid_use'] = st.radio("Steriod Use", ["Y", "N"])
         participant_fields['motion_score'] = st.number_input("Motion Score")
         participant_fields['description_of_hand_scanned'] = st.text_input("Description of Hand Scanned")
 
@@ -69,7 +69,7 @@ with st.form("Manual Form", clear_on_submit=False):
     if submitted:
         # Basic completion checking
         if (participant_fields["age"] == 0) or (study_fields["study_id"] == "-") or (img_fields["scan_date"] == None):
-            st.warning("Please Fill In Required Fields")
+            st.warning("Please Fill In Required Fields. Required fields are: Age, Study ID, Scan Date")
         else:
             img_fields['length_of_scan_region'] = [length_x, length_y, length_z]
             img_fields['voxel_spacing'] = [voxel_x, voxel_y, voxel_z]
@@ -85,8 +85,23 @@ with st.form("Manual Form", clear_on_submit=False):
 if isinstance(st.session_state.form_df, pd.DataFrame):
     if not st.session_state.form_df.empty:
         st.session_state.form_df = stutil.append_institution(st.session_state.form_df)
-        st.session_state.form_df = stutil.create_composite_id(st.session_state.form_df)
-        st.write(st.session_state.form_df)
-        st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
-        if st.session_state.add_to_db_button:
-            stutil.insert_df_into_collection(st.session_state.form_df, "allData", "form")
+        if st.session_state.form_df is not None:
+            st.session_state.form_df = stutil.create_composite_id(st.session_state.form_df)
+            st.write(st.session_state.form_df)
+            st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
+            if st.session_state.add_to_db_button:
+                stutil.insert_df_into_collection(st.session_state.form_df, "allData", "form")
+
+
+f"""
+#### How to use the Form Uploader
+
+- Image metadata can only be uploaded one image at a time
+
+- **Required fields** are: Age, Study ID, Scan Date
+
+- If you do not have information for a non-required field, you can leave it blank
+
+- Selecting "Study ID" will concatenate fields "time_interval_between_scan" and "groups" from the respective study in the **Protocols Table** to the entry
+
+"""
