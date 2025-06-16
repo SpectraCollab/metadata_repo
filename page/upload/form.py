@@ -31,8 +31,8 @@ with st.form("Manual Form", clear_on_submit=False):
 
     with st.expander("Patient Details*"):
         participant_fields['age'] = st.number_input("Age*", step=1)
-        participant_fields['sex_assigned_at_birth'] = st.radio("Sex Assigned at Birth", ["M", "F", "Other"])
-        participant_fields['weight_kg'] = st.number_input("Weight (kg)")
+        participant_fields['sex_assigned_at_birth'] = st.radio("Sex Assigned at Birth*", ["M", "F", "Other"])
+        participant_fields['weight_kg'] = st.number_input("Weight (kg)*")
         participant_fields['height_cm'] = st.number_input("Height (cm)")
         participant_fields['disease_status'] = st.text_input("Disease Status")
         participant_fields['smoking_status'] = st.radio("Smoking Status", ["Y", "N"])
@@ -68,8 +68,8 @@ with st.form("Manual Form", clear_on_submit=False):
 
     if submitted:
         # Basic completion checking
-        if (participant_fields["age"] == 0) or (study_fields["study_id"] == "-") or (img_fields["scan_date"] == None):
-            st.warning("Please Fill In Required Fields. Required fields are: Age, Study ID, Scan Date")
+        if (participant_fields["age"] == 0) or (participant_fields["weight"] == 0) or (study_fields["study_id"] == "-") or (img_fields["scan_date"] == None):
+            st.warning("Please Fill In Required Fields. Required fields are: Age, Sex Assigned At Birth, Weight, Study ID, Scan Date")
         else:
             img_fields['length_of_scan_region'] = [length_x, length_y, length_z]
             img_fields['voxel_spacing'] = [voxel_x, voxel_y, voxel_z]
@@ -98,7 +98,7 @@ f"""
 
 - Image metadata can only be uploaded one image at a time
 
-- **Required fields** are: Age, Study ID, Scan Date
+- **Required fields** are: Age, Sex Assigned At Birth, Weight, Study ID, Scan Date
 
 - If you do not have information for a non-required field, you can leave it blank
 

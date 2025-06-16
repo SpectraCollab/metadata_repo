@@ -68,7 +68,7 @@ st.write("This table displays all of the image metadata uploaded by SPECTRA memb
 
 # if there are no documents in the collection, data will be a string type
 if type(data) == str:
-    st.write("No data to display.")
+    st.warning("No data to display.")
 else:
     # Filter Selection Form in the right column
     with st.form("filters", clear_on_submit=False):
@@ -125,6 +125,8 @@ st.header("Definitions")
 definitions  = pd.read_excel('assets/field_definitions.xlsx')
 st.write("Below are brief definitions and expected data types of each field in 'All Data'.")
 st.write(definitions)
+md = """<sup>* "*" indicates required field</sup>"""
+st.write(md, unsafe_allow_html=True)
 
 # Protocols Section
 st.header("Protocols")

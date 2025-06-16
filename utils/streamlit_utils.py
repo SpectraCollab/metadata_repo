@@ -186,23 +186,59 @@ def standardize_csv(csv_fields):
         if col not in special_columns:
             df[col] = csv_fields[col]
             
-    df['length_of_scan_region'] = csv_fields.apply(
-        lambda row: [
-            round(row['length_of_scan_region_x'], 3), 
-            round(row['length_of_scan_region_y'], 3),
-            round(row['length_of_scan_region_z'], 3), 
-            ], 
-        axis=1
-    )
+    def safe_numeric_conversion(value):
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return False
 
-    df['voxel_spacing'] = csv_fields.apply(
-        lambda row: [
-            round(row['voxel_spacing_x'], 3), 
-            round(row['voxel_spacing_y'], 3),
-            round(row['voxel_spacing_z'], 3), 
-            ], 
-        axis=1
-    )
+    # --- Handling 'length_of_scan_region' ---
+    required_len_cols = ['length_of_scan_region_x', 'length_of_scan_region_y', 'length_of_scan_region_z']
+    if all(col in csv_fields.columns for col in required_len_cols):
+        def process_length_row(row):
+            x_val = safe_numeric_conversion(row['length_of_scan_region_x'])
+            y_val = safe_numeric_conversion(row['length_of_scan_region_y'])
+            z_val = safe_numeric_conversion(row['length_of_scan_region_z'])
+
+            if x_val and y_val and z_val:
+                return [round(x_val, 3), round(y_val, 3), round(z_val, 3)]
+            else:
+                invalid_components = []
+                if not x_val: invalid_components.append('x')
+                if not y_val: invalid_components.append('y')
+                if not z_val: invalid_components.append('z')
+                st.warning(f"Row {row.name}: 'length_of_scan_region' has non-numeric/missing values for {', '.join(invalid_components)}. Setting to None.")
+                return [None, None, None]
+
+        df['length_of_scan_region'] = csv_fields.apply(process_length_row, axis=1)
+
+    else:
+        st.warning("Required columns for 'length_of_scan_region' (x, y, z) are missing. Setting to None for all rows.")
+        df['length_of_scan_region'] = [None, None, None]
+
+    # --- Handling 'voxel_spacing' ---
+    required_voxel_cols = ['voxel_spacing_x', 'voxel_spacing_y', 'voxel_spacing_z']
+    if all(col in csv_fields.columns for col in required_voxel_cols):
+        def process_voxel_row(row):
+            x_val = safe_numeric_conversion(row['voxel_spacing_x'])
+            y_val = safe_numeric_conversion(row['voxel_spacing_y'])
+            z_val = safe_numeric_conversion(row['voxel_spacing_z'])
+
+            if x_val and y_val and z_val:
+                return [round(x_val, 3), round(y_val, 3), round(z_val, 3)]
+            else:
+                invalid_components = []
+                if not x_val: invalid_components.append('x')
+                if not y_val: invalid_components.append('y')
+                if not z_val: invalid_components.append('z')
+                st.warning(f"Row {row.name}: 'voxel_spacing' has non-numeric/missing values for {', '.join(invalid_components)}. Setting to None.")
+                return [None, None, None]
+
+        df['voxel_spacing'] = csv_fields.apply(process_voxel_row, axis=1)
+
+    else:
+        st.warning("Required columns for 'voxel_spacing' (x, y, z) are missing. Setting to None for all rows.")
+        df['voxel_spacing'] = [None, None, None]
 
     return df
 

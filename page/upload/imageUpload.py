@@ -74,6 +74,10 @@ if uploaded_images != []:
         print("Images detected... reading images")
         process_images(uploaded_images)
 
+    if st.session_state.img_df['scan_date'].isna().any() or st.session_state.img_df['file_type'].isna().any():
+        st.warning("Image headers must contain scan_date and file_name. One or more images are missing this info.")
+        st.session_state.img_df = None
+
     col1.write(st.session_state.img_df)
     images_loaded = True
 
@@ -95,6 +99,10 @@ if uploaded_subjects != []:
         filenames = [subject.name.split(".")[0] for subject in uploaded_subjects]
         st.session_state.pdf_df['file_name'] = filenames
 
+    if st.session_state.pdf_df['age'].isna().any() or st.session_state.pdf_df['sex_assigned_at_birth'].isna().any() or st.session_state.pdf_df['weight_kg'].isna().any():
+        st.warning("All transmittals must contain age, sex_assigned_at_birth, weight_kg and file_name. One or more transmittals is missing this info.")
+        st.session_state.pdf_df = None
+
     col2.write(st.session_state.pdf_df)
     subjects_loaded = True
 
@@ -112,17 +120,20 @@ if images_loaded and subjects_loaded and protocols_loaded:
 
     st.header("Merged Dataset")
     if isinstance(merged_df, pd.DataFrame):
-        # Writing new rows to database    
-        merged_df = stutil.append_institution(merged_df)
-        if merged_df is not None:
-            merged_df = stutil.create_composite_id(merged_df)
-            st.write(merged_df)
-            st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
+        if merged_df.shape[0] == 0:
+            st.warning("Unable to merge datasets. Ensure files are named appropriately.")
+        else: 
+            # Writing new rows to database    
+            merged_df = stutil.append_institution(merged_df)
+            if merged_df is not None:
+                merged_df = stutil.create_composite_id(merged_df)
+                st.write(merged_df)
+                st.button("Add to Database", on_click=stutil.add_to_db_button_clicked)
 
-            if st.session_state.add_to_db_button:
-                stutil.insert_df_into_collection(merged_df, "allData", "isq")
+                if st.session_state.add_to_db_button:
+                    stutil.insert_df_into_collection(merged_df, "allData", "isq")
     else:
-        st.write("Unable to merge datasets")
+        st.warning("Unable to merge datasets. Ensure files are named appropriately.")
 
 
 """
