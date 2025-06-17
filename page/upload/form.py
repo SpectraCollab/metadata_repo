@@ -68,7 +68,7 @@ with st.form("Manual Form", clear_on_submit=False):
 
     if submitted:
         # Basic completion checking
-        if (participant_fields["age"] == 0) or (participant_fields["weight"] == 0) or (study_fields["study_id"] == "-") or (img_fields["scan_date"] == None):
+        if (participant_fields["age"] == 0) or (participant_fields["weight_kg"] == 0) or (study_fields["study_id"] == "-") or (img_fields["scan_date"] == None):
             st.warning("Please Fill In Required Fields. Required fields are: Age, Sex Assigned At Birth, Weight, Study ID, Scan Date")
         else:
             img_fields['length_of_scan_region'] = [length_x, length_y, length_z]

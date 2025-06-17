@@ -10,7 +10,7 @@ try:
     institution = st.session_state.member_cms["dataItems"][0]["data"]["universityInstitution"]
 except:
     institution = None
-    md = """Please add a University/Institution to your profile here: [Update Profile](https://www.spectra-collab.org/members/update)"""
+    md = """Please add a University/Institution to your profile here: [Update Profile](https://www.spectra-collab.org/members/select)"""
     st.warning(md)
 
 try:
