@@ -123,7 +123,7 @@ if images_loaded and subjects_loaded and protocols_loaded:
     st.header("Merged Dataset")
     if isinstance(merged_df, pd.DataFrame):
         if merged_df.shape[0] == 0:
-            st.warning("Unable to merge datasets. Ensure files are named appropriately.")
+            st.warning("Unable to merge datasets. Ensure files are named appropriately and Study ID exists in Protocols Table.")
         else: 
             # Writing new rows to database    
             merged_df = stutil.append_institution(merged_df)
@@ -135,7 +135,7 @@ if images_loaded and subjects_loaded and protocols_loaded:
                 if st.session_state.add_to_db_button:
                     stutil.insert_df_into_collection(merged_df, "allData", "isq")
     else:
-        st.warning("Unable to merge datasets. Ensure files are named appropriately.")
+        st.warning("Unable to merge datasets. Ensure files are named appropriately and Study ID exists in Protocols Table.")
 
 
 """
@@ -143,12 +143,13 @@ if images_loaded and subjects_loaded and protocols_loaded:
 
 - **IMPORTANT**: to successfully merge Image and Transmittal data, each corresponding file must end with the same numerical value and an underscore ("_") prior to that value (ie. "image_1.dcm" & "transmittal_1.pdf")
 
+- **IMPORTANT**: PDF Transmittal MUST contain a Study ID that exists in the **Protocols Table** 
+
 - Currently the supported file types are .ISQ, .DCM
 
 - When using a DCM image series, please only upload the **LAST** image in the series
 
 - One PDF transmittal matching that of the Transmittal Template must be uploaded for each image file
 
-- Fields from the respective Study IDs are concatenated to the data entry from the **Protocols Table** based on the Study ID of the Transmittal 
 
 """

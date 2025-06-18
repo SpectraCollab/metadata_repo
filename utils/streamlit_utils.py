@@ -392,7 +392,7 @@ def append_institution(df):
         df.insert(0, 'institution', first_column)
         return df
     except:
-        md = """You must have an University/Institution on you Spectra Member profile. You can update this here: [Update Profile](https://www.spectra-collab.org/members/select)"""
+        md = """You must have an University/Institution on you Spectra Member profile. You can update this here: [Create/Update Profile](https://www.spectra-collab.org/members/select)"""
         st.warning(md)
         return None
 

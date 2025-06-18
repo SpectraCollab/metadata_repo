@@ -1,6 +1,5 @@
 import streamlit as st
 import utils.streamlit_utils as stutil
-import utils.auth as auth
 
 stutil.print_states()
 st.header("Your Profile")
@@ -10,7 +9,7 @@ try:
     institution = st.session_state.member_cms["dataItems"][0]["data"]["universityInstitution"]
 except:
     institution = None
-    md = """Please add a University/Institution to your profile here: [Update Profile](https://www.spectra-collab.org/members/select)"""
+    md = """Please add a University/Institution to your profile here: [Create/Update Profile](https://www.spectra-collab.org/members/select)"""
     st.warning(md)
 
 try:
