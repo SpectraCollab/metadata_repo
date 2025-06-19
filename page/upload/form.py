@@ -46,8 +46,8 @@ with st.form("Manual Form", clear_on_submit=False):
 
     with st.expander("Study Details*"):
         study_fields['study_id'] = st.selectbox("Study ID*", study_ids)
-        study_fields['time_interval_between_scans'] = "Test"
-        study_fields['groups'] = None
+        study_fields['time_interval_between_scans'] = st.text_input("Time Interval Between Scans")
+        study_fields['groups'] = st.text_input("Groups")
 
     with st.expander("Image Details*"):
         img_fields['scan_date'] = st.date_input("Scan Date*", value=None)

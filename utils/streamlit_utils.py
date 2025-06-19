@@ -158,6 +158,9 @@ def merge_dataframes(subjects, protocols, images):
     except:
         return None
 
+    protocols['study_id'] = protocols['study_id'].str.upper()
+    subjects_and_images['study_id'] = subjects_and_images['study_id'].str.upper()
+
     try:
         merged_df = pd.merge(subjects_and_images, protocols, on=['study_id'])
     except:
@@ -239,6 +242,9 @@ def standardize_csv(csv_fields):
     else:
         st.warning("Required columns for 'voxel_spacing' (x, y, z) are missing. Setting to None for all rows.")
         df['voxel_spacing'] = [None, None, None]
+
+    df['scan_date'] = pd.to_datetime(df['scan_date'], format='mixed')
+    df['scan_date'] = df['scan_date'].dt.strftime('%Y-%m-%d')
 
     return df
 
