@@ -31,4 +31,5 @@ The webpage should automatically open on your default browser. **(Note, if it is
 
 ## Running the StreamLit Web App on Streamlit Community Cloud
 ### Step 1: Navigate to the following link:
-https://spectra-repository.streamlit.app/
+
+[https://spectra-repository.streamlit.app/](https://repository.spectra-collab.org/)
