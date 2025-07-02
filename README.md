@@ -7,7 +7,7 @@
 
 ## 1. Background
 
-Gathering medical images for research is a long, tedious task. Many institutions posses images that are highly relevant to other instututions' research areas, however, there is currently no convenient way to share information cross-institutionally about who was what kind of images. The SPECTRA Collaboration has pioneered development of an image metadata repository to share relevant metadata of their images with other memebers of the SPECTRA Collaboration in hopes to increase collaboration and image sharing between institutions.
+Gathering medical images for research is a long, tedious task. Many institutions possess images that are highly relevant to other institutions' research areas, however, there is currently no convenient way to share information cross-institutionally about who was what kind of images. The SPECTRA Collaboration has pioneered development of an image metadata repository to share relevant metadata of their images with other members of the SPECTRA Collaboration in hopes to increase collaboration and image sharing between institutions.
 
 ## 2. Intended Usage
 
@@ -23,7 +23,7 @@ If you are NOT currently a member of the Spectra Collaboration you must sign up 
 
 #### c). Site Usage
 
-Refer to PPT @ ...
+Refer to [Usage Instruction and FAQ Powerpoint](https://docs.google.com/presentation/d/1BybJdAy9LMRceH0rDgo4Mpslq9Jl4nNr/edit?usp=drive_link&ouid=100577848524603341913&rtpof=true&sd=true) for any questions regarding how to upload data or the meaning of any tables on the site.
 
 ## 3. Contributing
 
