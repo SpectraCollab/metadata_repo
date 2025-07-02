@@ -29,7 +29,7 @@ Run the command:
 
 The webpage should automatically open on your default browser. **(Note, if it is your first time using Streamlit, you may be prompted to enter your email. You don't have to. Instead just leave the email field blank and press enter)**
 
-## Running the StreamLit Web App on Streamlit Community Cloud
+## Running the StreamLit Web App Hosted by Google Cloud Run
 ### Step 1: Navigate to the following link:
 
 [https://repository.spectra-collab.org/](https://repository.spectra-collab.org/)
