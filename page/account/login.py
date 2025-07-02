@@ -30,7 +30,13 @@ login_url = auth.get_auth_url(visitor_token, code_challenge, state)
 
 st.header("Welcome to the SPECTRA Image Metadata Repository")
 st.write("The SPECTRA repository is web app designed to enable researchers to share image metadata accross multiple studies relating to arthritis research. The intent of this repository is to promote collaboration and encourage researchers to connect with each other if they find image metadata from another institution which may be useful to their research.")
-st.write("To access the repository, you must currently be registered as a SPECTRA member. If you are not registered, go to spectra-collab.org to create an account. If you are already a member, login using the button below.")
+
+info_md = """
+To access the repository, you must currently be registered as a SPECTRA member. If you are not registered, go to [spectra-collab.org](https://www.spectra-collab.org/) to create an account. If you are already a member, login using the button below.
+
+Please refer to the [Usage Instructions and FAQ Powerpoint](https://docs.google.com/presentation/d/1BybJdAy9LMRceH0rDgo4Mpslq9Jl4nNr/edit?usp=drive_link&ouid=100577848524603341913&rtpof=true&sd=true) before using the site.
+"""
+st.write(info_md)
 html = f"""
 <a href="{login_url}">
     <img src="data:image/png;base64,{login_image}" width="300">

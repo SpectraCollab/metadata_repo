@@ -60,7 +60,9 @@ data = to_df(allData.find({}))
 titleCol1, titleCol2 = st.columns([0.6, 0.4])
 md = """#### Welcome to the SPECTRA Metadata Repository
 
-This demonstration will show basic functionality of uploading image metadata to the database."""
+This demonstration will show basic functionality of uploading image metadata to the database. 
+
+Please refer to the [Usage Instructions and FAQ Powerpoint](https://docs.google.com/presentation/d/1BybJdAy9LMRceH0rDgo4Mpslq9Jl4nNr/edit?usp=drive_link&ouid=100577848524603341913&rtpof=true&sd=true) before using the site."""
 titleCol1.markdown(md)
 titleCol2.image("assets/spectra.webp", width=250)
 st.header("All Data")
